@@ -1,8 +1,7 @@
 const WEEKDAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
 let editingItemId = null;
 let editingChkId = null;
-let checklistEditMode = false;
-let dayEditMode = {};
+let editMode = false;
 let state = null; // loaded from server
 
 async function api(method, url, body){
@@ -35,8 +34,11 @@ function render(){
   const nights = Math.max(0, state.days.length - 1);
   document.getElementById('dayCountLabel').textContent = `${nights}박 ${state.days.length}일`;
 
-  const chkModeBtn = document.getElementById('chkModeBtn');
-  if(chkModeBtn) chkModeBtn.classList.toggle('active', checklistEditMode);
+  const editModeBtn = document.getElementById('editModeBtn');
+  if(editModeBtn) editModeBtn.classList.toggle('active', editMode);
+
+  const chkAddRow = document.getElementById('chkAddRow');
+  if(chkAddRow) chkAddRow.style.display = editMode ? 'flex' : 'none';
 
   const chkWrap = document.getElementById('chkList');
   chkWrap.innerHTML = '';
@@ -54,7 +56,7 @@ function render(){
       row.innerHTML = `
         <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChk(${item.id})">
         <span>${escapeHtml(item.text)}</span>
-        ${checklistEditMode ? `
+        ${editMode ? `
         <div class="actions">
           <button class="edit-btn" onclick="startEditChk(${item.id})" aria-label="수정">&#9998;</button>
           <button class="del" onclick="delChk(${item.id})" aria-label="삭제">&times;</button>
@@ -87,21 +89,18 @@ function render(){
         <div class="items">
           ${day.items.map(it => renderItem(day.date, it)).join('')}
         </div>
-        <div class="item-add">
+        <div class="item-add" style="display:${editMode ? 'flex' : 'none'}">
           <div class="item-add-row">
             <input type="time" id="time-start-${day.date}">
             <span class="time-sep">~</span>
             <input type="time" id="time-end-${day.date}">
           </div>
-          <input type="text" id="text-${day.date}" placeholder="일정">
-          <input type="text" id="note-${day.date}" placeholder="메모">
+          <input type="text" id="text-${day.date}" placeholder="일정 입력 (예: ICN > NRT)">
+          <input type="text" id="note-${day.date}" placeholder="메모 (선택)">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
-          <div class="item-add-actions">
-            <button class="item-add-btn" onclick="addItem('${day.date}')">+ 추가</button>
-            <button class="item-mode-btn ${dayEditMode[day.date] ? 'active' : ''}" onclick="toggleDayEditMode('${day.date}')">+ 수정</button>
-          </div>
+          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
         </div>
       </div>
     `;
@@ -141,7 +140,7 @@ function renderItem(date, it){
           <span class="text">${escapeHtml(it.text)}</span>
           ${it.note ? `<span class="note">${escapeHtml(it.note)}</span>` : ''}
         </div>
-        ${dayEditMode[date] ? `
+        ${editMode ? `
         <div class="actions">
           <button onclick="startEditItem(${it.id})" aria-label="수정">&#9998;</button>
           <button class="del-btn" onclick="delItem(${it.id})" aria-label="삭제">&times;</button>
@@ -164,7 +163,7 @@ function escapeAttr(s){
 
 document.getElementById('tripTitle').addEventListener('change', async e => {
   state.title = e.target.value;
-  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 document.getElementById('startDate').addEventListener('change', async e => {
@@ -172,7 +171,7 @@ document.getElementById('startDate').addEventListener('change', async e => {
   try{
     await api('PUT', '/api/trip', {startDate, endDate: state.endDate < startDate ? startDate : state.endDate});
     await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 document.getElementById('endDate').addEventListener('change', async e => {
@@ -180,7 +179,7 @@ document.getElementById('endDate').addEventListener('change', async e => {
   try{
     await api('PUT', '/api/trip', {endDate, startDate: state.startDate > endDate ? endDate : state.startDate});
     await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 // ---------- checklist ----------
@@ -196,7 +195,7 @@ async function addChecklist(){
     state.checklist.push(item);
     input.value = '';
     render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('추가 실패. 다시 시도해주세요.'); }
 }
 
 async function toggleChk(id){
@@ -205,7 +204,7 @@ async function toggleChk(id){
   item.done = !item.done;
   render();
   try{ await api('PATCH', `/api/checklist/${id}`, {done: item.done}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 async function delChk(id){
@@ -213,7 +212,7 @@ async function delChk(id){
   if(editingChkId === id) editingChkId = null;
   render();
   try{ await api('DELETE', `/api/checklist/${id}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('삭제 실패. 다시 시도해주세요.'); }
 }
 
 function startEditChk(id){
@@ -232,10 +231,10 @@ async function saveEditChk(id){
   editingChkId = null;
   render();
   try{ await api('PATCH', `/api/checklist/${id}`, {text}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
-function toggleChecklistEditMode(){
-  checklistEditMode = !checklistEditMode;
+function toggleEditMode(){
+  editMode = !editMode;
   render();
 }
 
@@ -245,7 +244,7 @@ async function updateMainEvent(date, val){
   const day = state.days.find(d => d.date === date);
   if(day) day.mainEvent = val;
   try{ await api('PUT', '/api/day', {date, mainEvent: val}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 // ---------- itinerary items ----------
@@ -267,7 +266,7 @@ async function addItem(date){
     day.items.push(item);
     noteInput.value = '';
     render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('추가 실패. 다시 시도해주세요.'); }
 }
 
 function startEditItem(itemId){
@@ -276,10 +275,6 @@ function startEditItem(itemId){
 }
 function cancelEditItem(){
   editingItemId = null;
-  render();
-}
-function toggleDayEditMode(date){
-  dayEditMode[date] = !dayEditMode[date];
   render();
 }
 
@@ -297,7 +292,7 @@ async function saveEditItem(itemId){
   editingItemId = null;
   render();
   try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, note, transport}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 async function delItem(itemId){
@@ -305,7 +300,7 @@ async function delItem(itemId){
   if(editingItemId === itemId) editingItemId = null;
   render();
   try{ await api('DELETE', `/api/items/${itemId}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('삭제 실패. 다시 시도해주세요.'); }
 }
 
 // ---------- save button ----------
