@@ -4,8 +4,24 @@ async function api(method, url, body){
     headers: body ? {'Content-Type':'application/json'} : undefined,
     body: body ? JSON.stringify(body) : undefined
   });
+  if(res.status === 401){
+    window.location.href = '/login';
+    throw new Error('로그인이 필요해요.');
+  }
   if(!res.ok) throw new Error('요청 실패: ' + url);
   return res.json();
+}
+
+async function loadMe(){
+  try{
+    const me = await api('GET', '/api/me');
+    document.getElementById('userName').textContent = me.username || '';
+  }catch(err){}
+}
+
+async function logout(){
+  try{ await api('POST', '/api/logout'); }catch(err){}
+  window.location.href = '/login';
 }
 
 function escapeHtml(s){
@@ -34,7 +50,7 @@ document.getElementById('tripsTitle').addEventListener('change', async e => {
     return;
   }
   try{ await api('PUT', '/api/settings', {tripsTitle: title}); }
-  catch(err){ alert('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ alert('저장 실패. 다시 시도해주세요.'); }
 });
 
 async function loadTrips(){
@@ -66,9 +82,9 @@ async function loadTrips(){
       </div>
       <div class="body">
         <div class="dates">${formatRange(trip.startDate, trip.endDate)}</div>
-        <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '설명을 남겨보세요'}</div>
+        <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '소감을 남겨보세요'}</div>
       </div>
-      <button class="edit-desc" aria-label="설명 수정">&#9998;</button>
+      <button class="edit-desc" aria-label="소감 수정">&#9998;</button>
     `;
     const delBtn = card.querySelector('.del');
     delBtn.addEventListener('click', async (e) => {
@@ -84,7 +100,7 @@ async function loadTrips(){
     const editBtn = card.querySelector('.edit-desc');
     editBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const newDesc = prompt('이 여행에 대한 설명을 남겨보세요', trip.description || '');
+      const newDesc = prompt('이 여행에 대한 소감을 남겨보세요', trip.description || '');
       if(newDesc === null) return;
       try{
         await api('PUT', `/api/trips/${trip.id}`, {description: newDesc});
@@ -120,5 +136,6 @@ async function loadTrips(){
   }
 }
 
+loadMe();
 loadSettings();
 loadTrips();
