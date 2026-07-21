@@ -92,7 +92,7 @@ def get_trip():
             main_events = {r['event_date']: r['main_event'] for r in cur.fetchall()}
 
             cur.execute(
-                'SELECT id, event_date, time, end_time, text, transport FROM itinerary_items '
+                'SELECT id, event_date, time, end_time, text, note, transport FROM itinerary_items '
                 'WHERE trip_id = %s ORDER BY event_date, sort_order, id',
                 (trip_id,)
             )
@@ -105,6 +105,7 @@ def get_trip():
                 'time': r['time'] or '',
                 'endTime': r['end_time'] or '',
                 'text': r['text'],
+                'note': r['note'] or '',
                 'transport': r['transport'],
             })
 
@@ -256,6 +257,7 @@ def add_item():
     data = request.get_json(force=True) or {}
     date_str = data.get('date')
     text = (data.get('text') or '').strip()
+    note = (data.get('note') or '').strip()
     time_str = data.get('time') or ''
     end_time_str = data.get('endTime') or ''
     transport = bool(data.get('transport'))
@@ -266,10 +268,10 @@ def add_item():
         with conn.cursor() as cur:
             trip_id = get_trip_id(cur)
             cur.execute(
-                'INSERT INTO itinerary_items (trip_id, event_date, time, end_time, text, transport) '
-                'VALUES (%s, %s, %s, %s, %s, %s) '
-                'RETURNING id, event_date, time, end_time AS "endTime", text, transport',
-                (trip_id, date_str, time_str, end_time_str, text, transport)
+                'INSERT INTO itinerary_items (trip_id, event_date, time, end_time, text, note, transport) '
+                'VALUES (%s, %s, %s, %s, %s, %s, %s) '
+                'RETURNING id, event_date, time, end_time AS "endTime", text, note, transport',
+                (trip_id, date_str, time_str, end_time_str, text, note, transport)
             )
             row = cur.fetchone()
         conn.commit()
@@ -291,8 +293,10 @@ def update_item(item_id):
             cur.execute(
                 'UPDATE itinerary_items SET time = COALESCE(%s, time), '
                 'end_time = COALESCE(%s, end_time), '
-                'text = COALESCE(%s, text), transport = COALESCE(%s, transport) WHERE id = %s',
-                (data.get('time'), data.get('endTime'), data.get('text'), data.get('transport'), item_id)
+                'text = COALESCE(%s, text), note = COALESCE(%s, note), '
+                'transport = COALESCE(%s, transport) WHERE id = %s',
+                (data.get('time'), data.get('endTime'), data.get('text'), data.get('note'),
+                 data.get('transport'), item_id)
             )
         conn.commit()
         return jsonify({'ok': True})
