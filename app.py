@@ -34,6 +34,15 @@ def init_db():
                     ('나의 여행', '2026-10-07', '2026-10-10')
                 )
                 conn.commit()
+        with conn.cursor() as cur:
+            cur.execute('SELECT id FROM app_settings ORDER BY id LIMIT 1')
+            row = cur.fetchone()
+            if not row:
+                cur.execute(
+                    'INSERT INTO app_settings (trips_title) VALUES (%s)',
+                    ('내 여행들',)
+                )
+                conn.commit()
     finally:
         conn.close()
 
@@ -76,6 +85,53 @@ def trip_page(trip_id):
 @app.route('/app.js')
 def app_js():
     return send_from_directory(BASE_DIR, 'app.js')
+
+
+# ---------- app settings ----------
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT trips_title FROM app_settings ORDER BY id LIMIT 1')
+            row = cur.fetchone()
+        return jsonify({'tripsTitle': row['trips_title'] if row else '내 여행들'})
+    except Exception as e:
+        app.logger.exception(e)
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/settings', methods=['PUT'])
+def update_settings():
+    data = request.get_json(force=True) or {}
+    trips_title = (data.get('tripsTitle') or '').strip()
+    if not trips_title:
+        return jsonify({'error': 'title_required'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('SELECT id FROM app_settings ORDER BY id LIMIT 1')
+            row = cur.fetchone()
+            if row:
+                cur.execute(
+                    'UPDATE app_settings SET trips_title = %s WHERE id = %s',
+                    (trips_title, row['id'])
+                )
+            else:
+                cur.execute(
+                    'INSERT INTO app_settings (trips_title) VALUES (%s)', (trips_title,)
+                )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
 
 
 # ---------- trips list ----------
