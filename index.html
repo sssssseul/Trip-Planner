@@ -7,7 +7,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#EAF4FB;
@@ -312,6 +312,12 @@
     font-family:inherit;
   }
   .add-row button:hover{background:var(--ink);}
+  .add-row button#chkModeBtn.active{
+    background:var(--pink);
+    border-color:var(--pink);
+    color:#fff;
+  }
+  .add-row button#chkModeBtn.active:hover{background:var(--pink-deep);}
 
   /* days row */
   .days-scroll{
@@ -364,12 +370,18 @@
   }
   .item{
     display:flex;
-    gap:8px;
-    align-items:flex-start;
-    padding:5px 0;
+    flex-direction:column;
+    gap:3px;
+    padding:7px 0;
     border-bottom:1px solid var(--sand-line);
   }
   .item:last-of-type{border-bottom:none;}
+  .item-top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+  }
   .item .time{
     font-family:'JetBrains Mono', monospace;
     font-size:11px;
@@ -378,13 +390,16 @@
     border-radius:5px;
     padding:2px 6px;
     white-space:nowrap;
-    margin-top:1px;
   }
   .item.transport .time{background:var(--pink);color:#fff;}
   .item .text{
     font-size:13px;
-    line-height:1.5;
-    flex:1;
+    line-height:1.4;
+  }
+  .item .note{
+    font-size:12px;
+    line-height:1.4;
+    color:var(--muted);
   }
   .item .actions{
     display:flex;
@@ -418,7 +433,11 @@
     padding:6px 6px;
     font-size:12px;
     font-family:'JetBrains Mono', monospace;
-    color:#555555;
+    font-weight:400;
+    color:#9AA5AC;
+  }
+  .item-edit-row input[type="time"]::-webkit-calendar-picker-indicator{
+    filter:opacity(0.45);
   }
   .time-sep{color:var(--muted); font-size:12px; flex-shrink:0;}
   .item-edit input[type="text"]{
@@ -477,7 +496,11 @@
     padding:6px 6px;
     font-size:12px;
     font-family:'JetBrains Mono', monospace;
-    color:#555555;
+    font-weight:400;
+    color:#9AA5AC;
+  }
+  .item-add-row input[type="time"]::-webkit-calendar-picker-indicator{
+    filter:opacity(0.45);
   }
   .item-add input[type="text"]{
     width:100%;
@@ -497,7 +520,12 @@
     user-select:none;
   }
   .item-add .toggle-transport input{margin:0;}
+  .item-add-actions{
+    display:flex;
+    gap:6px;
+  }
   .item-add-btn{
+    flex:1;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -512,6 +540,26 @@
     font-family:inherit;
   }
   .item-add-btn:hover{background:var(--sand);}
+  .item-mode-btn{
+    flex:0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border:1px solid var(--sand-line);
+    background:var(--paper-raised);
+    color:var(--muted);
+    border-radius:7px;
+    padding:6px 10px;
+    font-size:12px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .item-mode-btn:hover{background:var(--sand); color:var(--forest-deep);}
+  .item-mode-btn.active{
+    background:var(--pink);
+    border-color:var(--pink);
+    color:#fff;
+  }
 
   .toast{
     position:fixed;
@@ -585,6 +633,7 @@
       <div class="add-row">
         <input id="chkInput" type="text" placeholder="어디서 뭐하지?">
         <button onclick="addChecklist()">+</button>
+        <button id="chkModeBtn" onclick="toggleChecklistEditMode()" aria-label="수정 모드">&#9998;</button>
       </div>
     </div>
 
