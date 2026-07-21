@@ -19,13 +19,6 @@ async function api(method, url, body){
   return res.json();
 }
 
-async function loadMe(){
-  try{
-    const me = await api('GET', '/api/me');
-    document.getElementById('userName').textContent = me.username || '';
-  }catch(err){}
-}
-
 async function logout(){
   try{ await api('POST', '/api/logout'); }catch(err){}
   window.location.href = '/login';
@@ -112,12 +105,12 @@ function render(){
             <span class="time-sep">~</span>
             <input type="time" id="time-end-${day.date}">
           </div>
-          <input type="text" id="text-${day.date}" placeholder="일정">
-          <input type="text" id="note-${day.date}" placeholder="메모">
+          <input type="text" id="text-${day.date}" placeholder="일정 입력 (예: ICN > NRT)">
+          <input type="text" id="note-${day.date}" placeholder="메모 (선택)">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
-          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 추가</button>
+          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
         </div>
       </div>
     `;
@@ -134,8 +127,8 @@ function renderItem(date, it){
           <span class="time-sep">~</span>
           <input type="time" id="edit-time-end-${it.id}" value="${escapeAttr(it.endTime || '')}">
         </div>
-        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}" placeholder="일정">
-        <input type="text" id="edit-note-${it.id}" value="${escapeAttr(it.note || '')}" placeholder="메모">
+        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}" placeholder="일정 입력">
+        <input type="text" id="edit-note-${it.id}" value="${escapeAttr(it.note || '')}" placeholder="메모 (선택)">
         <div class="edit-controls">
           <label class="toggle-transport">
             <input type="checkbox" id="edit-transport-${it.id}" ${it.transport ? 'checked' : ''}> 이동/교통
@@ -338,5 +331,4 @@ function showToast(msg){
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-loadMe();
 loadTrip().catch(() => showToast('불러오기 실패. 새로고침해보세요.'));
