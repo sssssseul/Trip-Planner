@@ -47,11 +47,9 @@ async function loadTrips(){
       </div>
       <div class="body">
         <div class="dates">${formatRange(trip.startDate, trip.endDate)}</div>
-        <div class="stats">
-          <span>✓ 체크리스트 ${trip.checklistCount}</span>
-          <span>◆ 일정 ${trip.itemCount}</span>
-        </div>
+        <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '소감을 남겨보세요'}</div>
       </div>
+      <button class="edit-desc" aria-label="소감 수정">&#9998;</button>
     `;
     const delBtn = card.querySelector('.del');
     delBtn.addEventListener('click', async (e) => {
@@ -62,6 +60,18 @@ async function loadTrips(){
         loadTrips();
       }catch(err){
         alert('삭제에 실패했어요. 다시 시도해주세요.');
+      }
+    });
+    const editBtn = card.querySelector('.edit-desc');
+    editBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const newDesc = prompt('이 여행에 대한 소감을 남겨보세요', trip.description || '');
+      if(newDesc === null) return;
+      try{
+        await api('PUT', `/api/trips/${trip.id}`, {description: newDesc});
+        loadTrips();
+      }catch(err){
+        alert('저장에 실패했어요. 다시 시도해주세요.');
       }
     });
     grid.appendChild(card);
