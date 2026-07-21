@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trip Planner_My Trips</title>
+<title>Trip Planner_My Trips </title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -106,12 +106,7 @@
     z-index:1;
     display:flex;
     align-items:center;
-    gap:14px;
-  }
-  .user-bar #userName{
-    font-size:16px;
-    font-weight:700;
-    color:var(--ink);
+    gap:10px;
   }
   .user-bar .logout-btn{
     background:#fff;
@@ -134,8 +129,7 @@
   }
   .user-bar .account-link:hover{background:var(--sand); color:var(--forest-deep);}
   @media (max-width:600px){
-    .user-bar{top:16px; right:16px; gap:8px;}
-    .user-bar #userName{font-size:14px;}
+    .user-bar{top:16px; right:16px; gap:6px;}
   }
 
   .grid{
@@ -308,7 +302,6 @@
     </svg>
     <a class="eyebrow" href="/trips">TRIP PLANNER</a>
     <div class="user-bar">
-      <span id="userName"></span>
       <a class="account-link" href="/account">계정 설정</a>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
     </div>
