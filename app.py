@@ -1,300 +1,327 @@
-const WEEKDAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
-let editingItemId = null;
-let editingChkId = null;
-let state = null; // loaded from server
+import os
+from datetime import datetime, timedelta
 
-async function api(method, url, body){
-  const res = await fetch(url, {
-    method,
-    headers: body ? {'Content-Type':'application/json'} : undefined,
-    body: body ? JSON.stringify(body) : undefined
-  });
-  if(!res.ok) throw new Error('요청 실패: ' + url);
-  return res.json();
-}
+from flask import Flask, request, jsonify, send_from_directory
+import psycopg2
+import psycopg2.extras
 
-function formatWeekday(dateStr){
-  const d = new Date(dateStr + 'T00:00:00');
-  const weekday = WEEKDAYS[d.getDay()];
-  const slashDate = dateStr.replace(/-/g, '/');
-  return { weekday, slashDate };
-}
+app = Flask(__name__)
 
-async function loadTrip(){
-  state = await api('GET', '/api/trip');
-  render();
-}
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-function render(){
-  if(!state) return;
-  document.getElementById('tripTitle').value = state.title;
-  document.getElementById('startDate').value = state.startDate;
-  document.getElementById('endDate').value = state.endDate;
-  const nights = Math.max(0, state.days.length - 1);
-  document.getElementById('dayCountLabel').textContent = `${nights}박 ${state.days.length}일`;
+DATABASE_URL = os.environ.get('DATABASE_URL')
 
-  const chkWrap = document.getElementById('chkList');
-  chkWrap.innerHTML = '';
-  state.checklist.forEach(item => {
-    const row = document.createElement('div');
-    if(editingChkId === item.id){
-      row.className = 'chk-edit';
-      row.innerHTML = `
-        <input type="text" id="edit-chk-${item.id}" value="${escapeAttr(item.text)}">
-        <button class="cancel-chk" onclick="cancelEditChk()">취소</button>
-        <button class="save-chk" onclick="saveEditChk(${item.id})">저장</button>
-      `;
-    }else{
-      row.className = 'chk-item' + (item.done ? ' done' : '');
-      row.innerHTML = `
-        <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChk(${item.id})">
-        <span>${escapeHtml(item.text)}</span>
-        <div class="actions">
-          <button class="edit-btn" onclick="startEditChk(${item.id})" aria-label="수정">&#9998;</button>
-          <button class="del" onclick="delChk(${item.id})" aria-label="삭제">&times;</button>
-        </div>
-      `;
-    }
-    chkWrap.appendChild(row);
-  });
 
-  const daysWrap = document.getElementById('daysScroll');
-  daysWrap.innerHTML = '';
-  state.days.forEach((day, idx) => {
-    const { weekday, slashDate } = formatWeekday(day.date);
-    const card = document.createElement('div');
-    card.className = 'day-card';
-    card.innerHTML = `
-      <div class="day-head">
-        <div class="day-label">DAY ${idx + 1}</div>
-        <div class="weekday-row">
-          <div class="weekday">${weekday}</div>
-          <div class="date">(${slashDate})</div>
-        </div>
-      </div>
-      <div class="main-event">
-        <span class="event-flag">&#10003;</span>
-        <input type="text" placeholder="오늘의 메인 이벤트" value="${escapeAttr(day.mainEvent || '')}"
-               onchange="updateMainEvent('${day.date}', this.value)">
-      </div>
-      <div class="day-body">
-        <div class="items">
-          ${day.items.map(it => renderItem(day.date, it)).join('')}
-        </div>
-        <div class="item-add">
-          <div class="item-add-row">
-            <input type="time" id="time-start-${day.date}">
-            <span class="time-sep">~</span>
-            <input type="time" id="time-end-${day.date}">
-          </div>
-          <input type="text" id="text-${day.date}" placeholder="일정 입력">
-          <label class="toggle-transport">
-            <input type="checkbox" id="transport-${day.date}"> 이동/교통
-          </label>
-          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
-        </div>
-      </div>
-    `;
-    daysWrap.appendChild(card);
-  });
-}
+def get_conn():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
 
-function renderItem(date, it){
-  if(editingItemId === it.id){
-    return `
-      <div class="item-edit">
-        <div class="item-edit-row">
-          <input type="time" id="edit-time-${it.id}" value="${escapeAttr(it.time || '')}">
-          <span class="time-sep">~</span>
-          <input type="time" id="edit-time-end-${it.id}" value="${escapeAttr(it.endTime || '')}">
-        </div>
-        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}">
-        <div class="edit-controls">
-          <label class="toggle-transport">
-            <input type="checkbox" id="edit-transport-${it.id}" ${it.transport ? 'checked' : ''}> 이동/교통
-          </label>
-          <div class="edit-buttons">
-            <button class="cancel-item" onclick="cancelEditItem()">취소</button>
-            <button class="save-item" onclick="saveEditItem(${it.id})">저장</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  const timeLabel = it.endTime ? `${it.time || ''} - ${it.endTime}` : (it.time || '');
-  return `
-    <div class="item ${it.transport ? 'transport' : ''}">
-      <span class="time">${escapeHtml(timeLabel)}</span>
-      <span class="text">${escapeHtml(it.text)}</span>
-      <div class="actions">
-        <button onclick="startEditItem(${it.id})" aria-label="수정">&#9998;</button>
-        <button class="del-btn" onclick="delItem(${it.id})" aria-label="삭제">&times;</button>
-      </div>
-    </div>
-  `;
-}
 
-function escapeHtml(s){
-  const d = document.createElement('div');
-  d.textContent = s == null ? '' : s;
-  return d.innerHTML;
-}
-function escapeAttr(s){
-  return escapeHtml(s).replace(/"/g, '&quot;');
-}
+def init_db():
+    schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        schema = f.read()
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(schema)
+        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute('SELECT id FROM trips ORDER BY id LIMIT 1')
+            row = cur.fetchone()
+            if not row:
+                cur.execute(
+                    'INSERT INTO trips (title, start_date, end_date) VALUES (%s, %s, %s)',
+                    ('나의 여행', '2026-10-07', '2026-10-10')
+                )
+                conn.commit()
+    finally:
+        conn.close()
 
-// ---------- trip meta ----------
 
-document.getElementById('tripTitle').addEventListener('change', async e => {
-  state.title = e.target.value;
-  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-});
+def get_trip_id(cur):
+    cur.execute('SELECT id FROM trips ORDER BY id LIMIT 1')
+    return cur.fetchone()['id']
 
-document.getElementById('startDate').addEventListener('change', async e => {
-  const startDate = e.target.value;
-  try{
-    await api('PUT', '/api/trip', {startDate, endDate: state.endDate < startDate ? startDate : state.endDate});
-    await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-});
 
-document.getElementById('endDate').addEventListener('change', async e => {
-  const endDate = e.target.value;
-  try{
-    await api('PUT', '/api/trip', {endDate, startDate: state.startDate > endDate ? endDate : state.startDate});
-    await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-});
+def date_range(start_str, end_str):
+    start = datetime.strptime(start_str, '%Y-%m-%d').date()
+    end = datetime.strptime(end_str, '%Y-%m-%d').date()
+    if end < start:
+        return [start_str]
+    days = []
+    cur = start
+    while cur <= end:
+        days.append(cur.isoformat())
+        cur += timedelta(days=1)
+    return days
 
-// ---------- checklist ----------
 
-document.getElementById('chkInput').addEventListener('keydown', e => { if(e.key === 'Enter') addChecklist(); });
+# ---------- 화면 ----------
 
-async function addChecklist(){
-  const input = document.getElementById('chkInput');
-  const val = input.value.trim();
-  if(!val) return;
-  try{
-    const item = await api('POST', '/api/checklist', {text: val});
-    state.checklist.push(item);
-    input.value = '';
-    render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
-}
+@app.route('/')
+def index():
+    return send_from_directory(BASE_DIR, 'index.html')
 
-async function toggleChk(id){
-  const item = state.checklist.find(c => c.id === id);
-  if(!item) return;
-  item.done = !item.done;
-  render();
-  try{ await api('PATCH', `/api/checklist/${id}`, {done: item.done}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-}
 
-async function delChk(id){
-  state.checklist = state.checklist.filter(c => c.id !== id);
-  if(editingChkId === id) editingChkId = null;
-  render();
-  try{ await api('DELETE', `/api/checklist/${id}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
-}
+@app.route('/app.js')
+def app_js():
+    return send_from_directory(BASE_DIR, 'app.js')
 
-function startEditChk(id){
-  editingChkId = id;
-  render();
-}
-function cancelEditChk(){
-  editingChkId = null;
-  render();
-}
-async function saveEditChk(id){
-  const text = document.getElementById('edit-chk-' + id).value.trim();
-  if(!text) return;
-  const item = state.checklist.find(c => c.id === id);
-  if(item) item.text = text;
-  editingChkId = null;
-  render();
-  try{ await api('PATCH', `/api/checklist/${id}`, {text}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-}
 
-// ---------- day main event ----------
+# ---------- trip ----------
 
-async function updateMainEvent(date, val){
-  const day = state.days.find(d => d.date === date);
-  if(day) day.mainEvent = val;
-  try{ await api('PUT', '/api/day', {date, mainEvent: val}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-}
+@app.route('/api/trip', methods=['GET'])
+def get_trip():
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute('SELECT * FROM trips WHERE id = %s', (trip_id,))
+            trip = cur.fetchone()
 
-// ---------- itinerary items ----------
+            cur.execute(
+                'SELECT id, text, done FROM checklist_items WHERE trip_id = %s ORDER BY sort_order, id',
+                (trip_id,)
+            )
+            checklist = cur.fetchall()
 
-async function addItem(date){
-  const timeStartInput = document.getElementById('time-start-' + date);
-  const timeEndInput = document.getElementById('time-end-' + date);
-  const textInput = document.getElementById('text-' + date);
-  const transportInput = document.getElementById('transport-' + date);
-  const text = textInput.value.trim();
-  if(!text) return;
-  try{
-    const item = await api('POST', '/api/items', {
-      date, time: timeStartInput.value, endTime: timeEndInput.value, text, transport: transportInput.checked
-    });
-    const day = state.days.find(d => d.date === date);
-    day.items.push(item);
-    render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
-}
+            cur.execute(
+                'SELECT event_date, main_event FROM day_events WHERE trip_id = %s',
+                (trip_id,)
+            )
+            main_events = {r['event_date']: r['main_event'] for r in cur.fetchall()}
 
-function startEditItem(itemId){
-  editingItemId = itemId;
-  render();
-}
-function cancelEditItem(){
-  editingItemId = null;
-  render();
-}
+            cur.execute(
+                'SELECT id, event_date, time, end_time, text, transport FROM itinerary_items '
+                'WHERE trip_id = %s ORDER BY event_date, sort_order, id',
+                (trip_id,)
+            )
+            item_rows = cur.fetchall()
 
-async function saveEditItem(itemId){
-  const time = document.getElementById('edit-time-' + itemId).value;
-  const endTime = document.getElementById('edit-time-end-' + itemId).value;
-  const text = document.getElementById('edit-text-' + itemId).value.trim();
-  const transport = document.getElementById('edit-transport-' + itemId).checked;
-  if(!text) return;
-  for(const day of state.days){
-    const item = day.items.find(it => it.id === itemId);
-    if(item){ item.time = time; item.endTime = endTime; item.text = text; item.transport = transport; break; }
-  }
-  editingItemId = null;
-  render();
-  try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, transport}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
-}
+        items_by_date = {}
+        for r in item_rows:
+            items_by_date.setdefault(r['event_date'], []).append({
+                'id': r['id'],
+                'time': r['time'] or '',
+                'endTime': r['end_time'] or '',
+                'text': r['text'],
+                'transport': r['transport'],
+            })
 
-async function delItem(itemId){
-  state.days.forEach(day => { day.items = day.items.filter(it => it.id !== itemId); });
-  if(editingItemId === itemId) editingItemId = null;
-  render();
-  try{ await api('DELETE', `/api/items/${itemId}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
-}
+        days = []
+        for d in date_range(trip['start_date'], trip['end_date']):
+            days.append({
+                'date': d,
+                'mainEvent': main_events.get(d, ''),
+                'items': items_by_date.get(d, []),
+            })
 
-// ---------- save button ----------
-// 모든 변경사항은 입력 즉시 DB에 저장돼요. 이 버튼은 저장 중인 입력칸의
-// 포커스를 해제해서 마지막 입력까지 확실히 반영시키고 확인 메시지를 보여줘요.
+        return jsonify({
+            'id': trip['id'],
+            'title': trip['title'],
+            'startDate': trip['start_date'],
+            'endDate': trip['end_date'],
+            'checklist': checklist,
+            'days': days,
+        })
+    except Exception as e:
+        app.logger.exception(e)
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
 
-function saveAll(){
-  if(document.activeElement) document.activeElement.blur();
-  showToast('모두 저장됐어요.');
-}
 
-let toastTimer = null;
-function showToast(msg){
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
-}
+@app.route('/api/trip', methods=['PUT'])
+def update_trip():
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'UPDATE trips SET title = COALESCE(%s, title), '
+                'start_date = COALESCE(%s, start_date), '
+                'end_date = COALESCE(%s, end_date) WHERE id = %s',
+                (data.get('title'), data.get('startDate'), data.get('endDate'), trip_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
 
-loadTrip().catch(() => showToast('불러오기 실패. 새로고침해보세요.'));
+
+# ---------- checklist ----------
+
+@app.route('/api/checklist', methods=['POST'])
+def add_checklist():
+    data = request.get_json(force=True) or {}
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({'error': 'text_required'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'INSERT INTO checklist_items (trip_id, text, done) VALUES (%s, %s, false) '
+                'RETURNING id, text, done',
+                (trip_id, text)
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return jsonify(row)
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/checklist/<int:item_id>', methods=['PATCH'])
+def update_checklist(item_id):
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'UPDATE checklist_items SET done = COALESCE(%s, done), '
+                'text = COALESCE(%s, text) WHERE id = %s',
+                (data.get('done'), data.get('text'), item_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/checklist/<int:item_id>', methods=['DELETE'])
+def delete_checklist(item_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM checklist_items WHERE id = %s', (item_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- day main event ----------
+
+@app.route('/api/day', methods=['PUT'])
+def upsert_day():
+    data = request.get_json(force=True) or {}
+    date_str = data.get('date')
+    main_event = data.get('mainEvent', '')
+    if not date_str:
+        return jsonify({'error': 'date_required'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                '''INSERT INTO day_events (trip_id, event_date, main_event)
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (trip_id, event_date)
+                   DO UPDATE SET main_event = EXCLUDED.main_event''',
+                (trip_id, date_str, main_event)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- itinerary items ----------
+
+@app.route('/api/items', methods=['POST'])
+def add_item():
+    data = request.get_json(force=True) or {}
+    date_str = data.get('date')
+    text = (data.get('text') or '').strip()
+    time_str = data.get('time') or ''
+    end_time_str = data.get('endTime') or ''
+    transport = bool(data.get('transport'))
+    if not date_str or not text:
+        return jsonify({'error': 'invalid'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'INSERT INTO itinerary_items (trip_id, event_date, time, end_time, text, transport) '
+                'VALUES (%s, %s, %s, %s, %s, %s) '
+                'RETURNING id, event_date, time, end_time AS "endTime", text, transport',
+                (trip_id, date_str, time_str, end_time_str, text, transport)
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return jsonify(row)
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/items/<int:item_id>', methods=['PATCH'])
+def update_item(item_id):
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'UPDATE itinerary_items SET time = COALESCE(%s, time), '
+                'end_time = COALESCE(%s, end_time), '
+                'text = COALESCE(%s, text), transport = COALESCE(%s, transport) WHERE id = %s',
+                (data.get('time'), data.get('endTime'), data.get('text'), data.get('transport'), item_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM itinerary_items WHERE id = %s', (item_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+init_db()
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 3000))
+    app.run(host='0.0.0.0', port=port)
