@@ -30,16 +30,16 @@ function formatRange(startDate, endDate){
 async function loadSettings(){
   try{
     const settings = await api('GET', '/api/settings');
-    document.getElementById('tripsTitle').value = settings.tripsTitle || '내 여행들';
+    document.getElementById('tripsTitle').value = settings.tripsTitle || 'My Trips';
   }catch(err){
-    document.getElementById('tripsTitle').value = '내 여행들';
+    document.getElementById('tripsTitle').value = 'My Trips';
   }
 }
 
 document.getElementById('tripsTitle').addEventListener('change', async e => {
   const title = e.target.value.trim();
   if(!title){
-    e.target.value = '내 여행들';
+    e.target.value = 'My Trips';
     return;
   }
   try{ await api('PUT', '/api/settings', {tripsTitle: title}); }
