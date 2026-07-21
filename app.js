@@ -93,13 +93,13 @@ function render(){
             <span class="time-sep">~</span>
             <input type="time" id="time-end-${day.date}">
           </div>
-          <input type="text" id="text-${day.date}" placeholder="일정 입력 (예: ICN > NRT)">
-          <input type="text" id="note-${day.date}" placeholder="메모 (선택)">
+          <input type="text" id="text-${day.date}" placeholder="일정">
+          <input type="text" id="note-${day.date}" placeholder="메모">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
           <div class="item-add-actions">
-            <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
+            <button class="item-add-btn" onclick="addItem('${day.date}')">+ 추가</button>
             <button class="item-mode-btn ${dayEditMode[day.date] ? 'active' : ''}" onclick="toggleDayEditMode('${day.date}')">+ 수정</button>
           </div>
         </div>
