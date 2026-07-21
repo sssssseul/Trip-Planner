@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip Planner - 계정 설정</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#EAF4FB;
+    --paper-raised:#FFFFFF;
+    --ink:#2C4A5E;
+    --forest:#CDE9F8;
+    --forest-deep:#3E8FC0;
+    --coral:#2EA3C7;
+    --coral-deep:#1D6A85;
+    --pink:#E8749A;
+    --pink-deep:#B84E72;
+    --sand:#DCF0FB;
+    --sand-line:#BEE3F5;
+    --muted:#6C90A3;
+  }
+  *{box-sizing:border-box;}
+  html, body{overflow-x:hidden; max-width:100%;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background-color:var(--paper);
+    color:var(--ink);
+    font-family:'Noto Sans KR', 'Noto Sans JP', -apple-system, sans-serif;
+    padding:40px 24px;
+  }
+  .wrap{max-width:480px; margin:0 auto;}
+  .back-link{
+    display:inline-block;
+    font-size:13px;
+    color:var(--forest-deep);
+    text-decoration:none;
+    margin-bottom:16px;
+  }
+  .back-link:hover{text-decoration:underline;}
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--forest-deep);
+    margin:0 0 8px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 24px;
+  }
+  .card{
+    background:var(--paper-raised);
+    border:1px solid var(--sand-line);
+    border-radius:16px;
+    padding:24px;
+    margin-bottom:16px;
+  }
+  .card h2{
+    font-size:15px;
+    font-weight:700;
+    margin:0 0 16px;
+    color:var(--forest-deep);
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--forest-deep);
+    margin-bottom:6px;
+  }
+  .field{margin-bottom:14px;}
+  input[type="text"], input[type="password"]{
+    width:100%;
+    border:1px solid var(--sand-line);
+    border-radius:8px;
+    padding:9px 12px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--paper);
+    color:var(--ink);
+  }
+  input:focus{outline:2px solid var(--forest-deep); outline-offset:1px;}
+  .submit-btn{
+    background:var(--forest-deep);
+    color:#fff;
+    border:none;
+    border-radius:8px;
+    padding:10px 18px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .submit-btn:hover{background:var(--ink);}
+  .submit-btn:disabled{opacity:0.6; cursor:default;}
+  .msg{
+    font-size:13px;
+    margin:10px 0 0;
+    display:none;
+  }
+  .msg.error{color:var(--coral-deep); display:block;}
+  .msg.success{color:var(--forest-deep); display:block;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="/trips">&larr; 내 여행들로</a>
+  <p class="eyebrow">TRIP PLANNER</p>
+  <h1>계정 설정</h1>
+
+  <div class="card">
+    <h2>아이디 변경</h2>
+    <form id="usernameForm">
+      <div class="field">
+        <label for="newUsername">새 아이디</label>
+        <input type="text" id="newUsername" required>
+      </div>
+      <div class="field">
+        <label for="usernamePassword">현재 비밀번호</label>
+        <input type="password" id="usernamePassword" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="submit-btn">아이디 변경</button>
+      <p class="msg" id="usernameMsg"></p>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>비밀번호 변경</h2>
+    <form id="passwordForm">
+      <div class="field">
+        <label for="currentPassword">현재 비밀번호</label>
+        <input type="password" id="currentPassword" required autocomplete="current-password">
+      </div>
+      <div class="field">
+        <label for="newPassword">새 비밀번호</label>
+        <input type="password" id="newPassword" required autocomplete="new-password" minlength="6">
+      </div>
+      <div class="field">
+        <label for="newPasswordConfirm">새 비밀번호 확인</label>
+        <input type="password" id="newPasswordConfirm" required autocomplete="new-password" minlength="6">
+      </div>
+      <button type="submit" class="submit-btn">비밀번호 변경</button>
+      <p class="msg" id="passwordMsg"></p>
+    </form>
+  </div>
+</div>
+
+<script src="/account.js"></script>
+</body>
+</html>
