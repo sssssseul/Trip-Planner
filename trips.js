@@ -34,7 +34,7 @@ document.getElementById('tripsTitle').addEventListener('change', async e => {
     return;
   }
   try{ await api('PUT', '/api/settings', {tripsTitle: title}); }
-  catch(err){ alert('저장 실패. 다시 시도해주세요.'); }
+  catch(err){ alert('저장 실패, 다시 시도해주세요.'); }
 });
 
 async function loadTrips(){
