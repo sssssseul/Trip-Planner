@@ -126,8 +126,20 @@
     align-items:center;
     gap:8px;
     background:var(--forest-deep);
-    border-bottom:2px dashed var(--sand);
-    padding:10px 16px;
+    padding:10px 16px 16px;
+    position:relative;
+  }
+  .main-event::after{
+    content:"";
+    position:absolute;
+    left:-8px;
+    right:-8px;
+    bottom:-6px;
+    height:12px;
+    background-image:radial-gradient(circle at center, var(--paper) 4px, transparent 4.5px);
+    background-size:16px 12px;
+    background-repeat:repeat-x;
+    z-index:2;
   }
   .main-event .event-flag{font-size:13px; color:#fff; flex-shrink:0;}
   .main-event input{
@@ -246,17 +258,17 @@
 
   /* days row */
   .days-scroll{
-    display:flex;
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0, 1fr));
     gap:16px;
-    overflow-x:auto;
-    padding-bottom:8px;
+  }
+  @media (max-width:640px){
+    .days-scroll{grid-template-columns:1fr;}
   }
   .day-card{
     background:var(--paper-raised);
     border:1px solid var(--sand-line);
     border-radius:16px;
-    min-width:260px;
-    flex:0 0 260px;
     overflow:hidden;
   }
   .day-head{
@@ -287,7 +299,6 @@
     font-family:'JetBrains Mono', monospace;
     font-size:12px;
     color:var(--muted);
-    margin-top:2px;
   }
   .day-body{
     background:var(--paper-raised);
