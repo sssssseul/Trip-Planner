@@ -32,7 +32,7 @@
     background-size:900px 620px;
     color:var(--ink);
     font-family:'Noto Sans KR', -apple-system, sans-serif;
-    padding:32px 24px 100px;
+    padding:20px 24px 100px;
   }
   .wrap{max-width:1180px;margin:0 auto;}
 
@@ -41,10 +41,10 @@
     background:var(--forest);
     color:var(--ink);
     border-radius:20px;
-    padding:36px 40px 32px;
+    padding:26px 40px 22px;
     position:relative;
     overflow:hidden;
-    margin-bottom:28px;
+    margin-bottom:20px;
   }
   .header-clouds{
     position:absolute;
@@ -94,7 +94,7 @@
     white-space:nowrap;
   }
   .header-meta input[type="date"]{
-    font-family:'JetBrains Mono', monospace;
+    font-family:'JetBrains Mono', 'Noto Sans KR', monospace;
     background:rgba(255,255,255,0.65);
     border:1px solid rgba(62,143,192,0.35);
     color:var(--ink);
@@ -379,9 +379,7 @@
     flex-direction:column;
     gap:3px;
     padding:7px 0;
-    border-bottom:1px solid var(--sand-line);
   }
-  .item:last-of-type{border-bottom:none;}
   .item-top{
     display:flex;
     align-items:center;
@@ -425,14 +423,18 @@
     flex-shrink:0;
   }
   .item .actions button{
-    background:none;border:none;
-    color:var(--muted);
+    opacity:0.6;
     cursor:pointer;
-    font-size:14px;
-    padding:2px;
+    background:none;
+    border:none;
+    padding:0 3px;
     display:flex;
+    font-size:14px;
+    font-weight:300;
+    color:var(--muted);
   }
-  .item .actions button:hover{color:var(--forest-deep);}
+  .item .actions button:hover{opacity:1; color:var(--forest-deep);}
+  .item .actions .del-btn{font-size:16px;}
   .item .actions .del-btn:hover{color:var(--coral-deep);}
 
   .item-edit{
@@ -450,7 +452,7 @@
     border-radius:7px;
     padding:6px 6px;
     font-size:12px;
-    font-family:'JetBrains Mono', monospace;
+    font-family:'JetBrains Mono', 'Noto Sans KR', monospace;
     font-weight:400;
     color:#9AA5AC;
   }
@@ -514,7 +516,7 @@
     border-radius:7px;
     padding:6px 6px;
     font-size:12px;
-    font-family:'JetBrains Mono', monospace;
+    font-family:'JetBrains Mono', 'Noto Sans KR', monospace;
     font-weight:400;
     color:#9AA5AC;
   }
