@@ -14,8 +14,9 @@ async function api(method, url, body){
 
 function formatWeekday(dateStr){
   const d = new Date(dateStr + 'T00:00:00');
-  const m = d.getMonth()+1, day = d.getDate();
-  return { label: `${m}월 ${day}일`, weekday: WEEKDAYS[d.getDay()] };
+  const weekday = WEEKDAYS[d.getDay()];
+  const slashDate = dateStr.replace(/-/g, '/');
+  return { weekday, slashDate };
 }
 
 async function loadTrip(){
@@ -47,7 +48,7 @@ function render(){
   const daysWrap = document.getElementById('daysScroll');
   daysWrap.innerHTML = '';
   state.days.forEach((day, idx) => {
-    const { label, weekday } = formatWeekday(day.date);
+    const { weekday, slashDate } = formatWeekday(day.date);
     const card = document.createElement('div');
     card.className = 'day-card';
     card.innerHTML = `
@@ -55,8 +56,8 @@ function render(){
         <div class="day-label">DAY ${idx + 1}</div>
         <div class="weekday-row">
           <div class="weekday">${weekday}</div>
+          <div class="date">(${slashDate})</div>
         </div>
-        <div class="date">${label}</div>
       </div>
       <div class="main-event">
         <span class="event-flag">&#10003;</span>
