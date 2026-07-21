@@ -35,7 +35,7 @@
     font-family:'Noto Sans KR', -apple-system, sans-serif;
     padding:20px 24px 100px;
   }
-  .wrap{max-width:1180px;margin:0 auto;}
+  .wrap{max-width:1560px;margin:0 auto;}
 
   /* header */
   .header{
@@ -131,6 +131,13 @@
     font-family:inherit;
   }
   .save-btn:hover{background:var(--paper);}
+  #editModeBtn{margin-left:0;}
+  #editModeBtn.active{
+    background:var(--pink);
+    color:#fff;
+    border-color:var(--pink);
+  }
+  #editModeBtn.active:hover{background:var(--pink-deep);}
   @media (max-width:480px){
     .header{padding:22px 20px 18px;}
     .header-meta{
@@ -319,19 +326,16 @@
     font-family:inherit;
   }
   .add-row button:hover{background:var(--ink);}
-  .add-row button#chkModeBtn.active{
-    background:var(--pink);
-    border-color:var(--pink);
-    color:#fff;
-  }
-  .add-row button#chkModeBtn.active:hover{background:var(--pink-deep);}
 
   /* days row */
   .days-scroll{
     display:grid;
-    grid-template-columns:repeat(2, minmax(0, 1fr));
+    grid-template-columns:repeat(4, minmax(0, 1fr));
     gap:16px;
     min-width:0;
+  }
+  @media (max-width:1200px){
+    .days-scroll{grid-template-columns:repeat(2, minmax(0, 1fr));}
   }
   @media (max-width:640px){
     .days-scroll{grid-template-columns:1fr;}
@@ -554,12 +558,7 @@
     user-select:none;
   }
   .item-add .toggle-transport input{margin:0;}
-  .item-add-actions{
-    display:flex;
-    gap:6px;
-  }
   .item-add-btn{
-    flex:1;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -574,28 +573,6 @@
     font-family:inherit;
   }
   .item-add-btn:hover{background:var(--sand);}
-  .item-mode-btn{
-    flex:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:5px;
-    border:1px dashed var(--sand-line);
-    background:transparent;
-    color:var(--forest-deep);
-    border-radius:7px;
-    padding:6px 12px;
-    font-size:12px;
-    cursor:pointer;
-    font-family:inherit;
-  }
-  .item-mode-btn:hover{background:var(--sand);}
-  .item-mode-btn.active{
-    background:var(--pink);
-    border:1px solid var(--pink);
-    color:#fff;
-  }
-  .item-mode-btn.active:hover{background:var(--pink-deep);}
 
   .toast{
     position:fixed;
@@ -674,6 +651,7 @@
       </div>
       <span class="daycount" id="dayCountLabel">3박 4일</span>
       <button class="save-btn" onclick="saveAll()">저장</button>
+      <button id="editModeBtn" class="save-btn" onclick="toggleEditMode()">수정</button>
     </div>
   </div>
 
@@ -681,10 +659,9 @@
     <div class="checklist">
       <h2>CHECK LIST</h2>
       <div id="chkList"></div>
-      <div class="add-row">
+      <div class="add-row" id="chkAddRow" style="display:none">
         <input id="chkInput" type="text" placeholder="어디서 뭐하지?">
         <button onclick="addChecklist()">+</button>
-        <button id="chkModeBtn" onclick="toggleChecklistEditMode()" aria-label="수정 모드">&#9998;</button>
       </div>
     </div>
 
