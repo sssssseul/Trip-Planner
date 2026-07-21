@@ -32,3 +32,5 @@ CREATE TABLE IF NOT EXISTS itinerary_items (
   sort_order INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE itinerary_items ADD COLUMN IF NOT EXISTS end_time TEXT DEFAULT '';
