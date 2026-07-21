@@ -31,9 +31,14 @@ async function loadTrips(){
   grid.innerHTML = '';
 
   trips.forEach(trip => {
-    const card = document.createElement('button');
+    const card = document.createElement('div');
     card.className = 'trip-card';
+    card.setAttribute('role', 'button');
+    card.setAttribute('tabindex', '0');
     card.onclick = () => { window.location.href = `/trip/${trip.id}`; };
+    card.addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') window.location.href = `/trip/${trip.id}`;
+    });
     card.innerHTML = `
       <button class="del" aria-label="삭제">&times;</button>
       <div class="band">
