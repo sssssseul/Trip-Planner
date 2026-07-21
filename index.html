@@ -17,6 +17,8 @@
     --forest-deep:#3E8FC0;
     --coral:#2EA3C7;
     --coral-deep:#1D6A85;
+    --pink:#E8749A;
+    --pink-deep:#B84E72;
     --sand:#DCF0FB;
     --sand-line:#BEE3F5;
     --muted:#6C90A3;
@@ -81,9 +83,15 @@
     margin-top:16px;
     flex-wrap:wrap;
   }
+  .date-field{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
   .header-meta label{
     font-size:13px;
     color:var(--forest-deep);
+    white-space:nowrap;
   }
   .header-meta input[type="date"]{
     font-family:'JetBrains Mono', monospace;
@@ -120,6 +128,18 @@
     font-family:inherit;
   }
   .save-btn:hover{background:var(--paper);}
+  @media (max-width:480px){
+    .header-meta{
+      flex-direction:column;
+      align-items:stretch;
+      gap:10px;
+    }
+    .date-field{justify-content:space-between;}
+    .date-field input[type="date"]{flex:1; max-width:170px;}
+    .date-sep{display:none;}
+    .save-btn{margin-left:0; width:100%; justify-content:center;}
+    .daycount{text-align:center;}
+  }
 
   .main-event{
     display:flex;
@@ -191,7 +211,7 @@
     display:flex;
     align-items:flex-start;
     gap:10px;
-    padding:9px 4px;
+    padding:14px 4px;
     border-bottom:1px solid var(--sand-line);
   }
   .chk-item:last-of-type{border-bottom:none;}
@@ -211,17 +231,52 @@
     color:var(--muted);
     text-decoration:line-through;
   }
-  .chk-item .del{
+  .chk-item .actions{
+    display:flex;
+    gap:2px;
+    flex-shrink:0;
+  }
+  .chk-item .actions button{
     opacity:0.55;
     cursor:pointer;
-    color:var(--coral-deep);
-    font-size:15px;
     background:none;
     border:none;
     padding:0 2px;
     display:flex;
+    font-size:15px;
   }
-  .chk-item .del:hover{opacity:1;}
+  .chk-item .actions button:hover{opacity:1;}
+  .chk-item .edit-btn{color:var(--forest-deep);}
+  .chk-item .del{color:var(--coral-deep);}
+  .chk-edit{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    padding:9px 4px;
+    border-bottom:1px solid var(--sand-line);
+  }
+  .chk-edit input[type="text"]{
+    flex:1;
+    min-width:0;
+    border:1px solid var(--sand-line);
+    border-radius:7px;
+    padding:6px 8px;
+    font-size:13px;
+    font-family:inherit;
+  }
+  .chk-edit button{
+    flex-shrink:0;
+    border:none;
+    border-radius:6px;
+    padding:6px 9px;
+    font-size:12px;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .chk-edit .save-chk{background:var(--forest-deep); color:#fff;}
+  .chk-edit .save-chk:hover{background:var(--ink);}
+  .chk-edit .cancel-chk{background:none; color:var(--muted); border:1px solid var(--sand-line) !important;}
+  .chk-edit .cancel-chk:hover{color:var(--ink);}
   .add-row{
     display:flex;
     gap:6px;
@@ -309,7 +364,7 @@
     display:flex;
     gap:8px;
     align-items:flex-start;
-    padding:8px 0;
+    padding:5px 0;
     border-bottom:1px solid var(--sand-line);
   }
   .item:last-of-type{border-bottom:none;}
@@ -323,7 +378,7 @@
     white-space:nowrap;
     margin-top:1px;
   }
-  .item.transport .time{background:var(--coral);color:#fff;}
+  .item.transport .time{background:var(--pink);color:#fff;}
   .item .text{
     font-size:13px;
     line-height:1.5;
@@ -352,18 +407,19 @@
     padding:8px 0;
     border-bottom:1px solid #ECEFF9;
   }
-  .item-edit-row{display:flex;gap:6px;}
-  .item-edit input[type="time"]{
-    width:80px;
+  .item-edit-row{display:flex; align-items:center; gap:6px;}
+  .item-edit-row input[type="time"]{
+    flex:1;
+    min-width:0;
     border:1px solid var(--sand-line);
     border-radius:7px;
     padding:6px 6px;
     font-size:12px;
     font-family:'JetBrains Mono', monospace;
   }
+  .time-sep{color:var(--muted); font-size:12px; flex-shrink:0;}
   .item-edit input[type="text"]{
-    flex:1;
-    min-width:0;
+    width:100%;
     border:1px solid var(--sand-line);
     border-radius:7px;
     padding:6px 8px;
@@ -409,9 +465,10 @@
     flex-direction:column;
     gap:6px;
   }
-  .item-add-row{display:flex;gap:6px;}
-  .item-add input[type="time"]{
-    width:80px;
+  .item-add-row{display:flex; align-items:center; gap:6px;}
+  .item-add-row input[type="time"]{
+    flex:1;
+    min-width:0;
     border:1px solid var(--sand-line);
     border-radius:7px;
     padding:6px 6px;
@@ -419,8 +476,7 @@
     font-family:'JetBrains Mono', monospace;
   }
   .item-add input[type="text"]{
-    flex:1;
-    min-width:0;
+    width:100%;
     border:1px solid var(--sand-line);
     border-radius:7px;
     padding:6px 8px;
@@ -504,11 +560,15 @@
     <p class="eyebrow">TRIP PLANNER</p>
     <input class="title-input" id="tripTitle" placeholder="여행 이름을 입력하세요" value="한슬의 여행">
     <div class="header-meta">
-      <label>시작일</label>
-      <input type="date" id="startDate" value="2026-10-07">
+      <div class="date-field">
+        <label>시작일</label>
+        <input type="date" id="startDate" value="2026-10-07">
+      </div>
       <span class="date-sep">→</span>
-      <label>종료일</label>
-      <input type="date" id="endDate" value="2026-10-10">
+      <div class="date-field">
+        <label>종료일</label>
+        <input type="date" id="endDate" value="2026-10-10">
+      </div>
       <span class="daycount" id="dayCountLabel">3박 4일</span>
       <button class="save-btn" onclick="saveAll()">저장</button>
     </div>
