@@ -35,7 +35,7 @@
     font-family:'Noto Sans KR', -apple-system, sans-serif;
     padding:20px 24px 100px;
   }
-  .wrap{max-width:1560px;margin:0 auto;}
+  .wrap{max-width:1800px;margin:0 auto;}
 
   /* header */
   .header{
@@ -191,12 +191,12 @@
   /* layout */
   .board{
     display:grid;
-    grid-template-columns:330px 1fr;
+    grid-template-columns:380px 1fr;
     gap:16px;
-    align-items:start;
+    align-items:stretch;
   }
   @media (max-width:840px){
-    .board{grid-template-columns:1fr;}
+    .board{grid-template-columns:1fr; align-items:start;}
   }
 
   /* checklist */
@@ -433,7 +433,6 @@
     overflow-wrap:break-word;
     min-width:0;
   }
-  .item .note::before{content:" "; color:var(--sand-line);}
   .item .actions{
     display:flex;
     gap:2px;
