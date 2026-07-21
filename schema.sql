@@ -34,3 +34,4 @@ CREATE TABLE IF NOT EXISTS itinerary_items (
 );
 
 ALTER TABLE itinerary_items ADD COLUMN IF NOT EXISTS end_time TEXT DEFAULT '';
+ALTER TABLE itinerary_items ADD COLUMN IF NOT EXISTS note TEXT DEFAULT '';
