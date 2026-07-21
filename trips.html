@@ -58,10 +58,6 @@
     position:relative;
     z-index:1;
   }
-  @media (max-width:480px){
-    .header{padding:22px 20px 18px; height:auto; min-height:190px;}
-    .title-input{font-size:26px;}
-  }
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
     font-size:12px;
@@ -70,6 +66,9 @@
     text-transform:uppercase;
     color:var(--forest-deep);
     margin:0 0 10px;
+    display:block;
+    text-decoration:none;
+    cursor:pointer;
   }
   .title-input{
     display:block;
@@ -88,6 +87,10 @@
     min-width:0;
     max-width:100%;
     padding:0;
+  }
+  @media (max-width:480px){
+    .header{padding:22px 20px 18px; height:auto; min-height:190px;}
+    .title-input{font-size:26px;}
   }
   .header p{
     margin:16px 0 0;
