@@ -121,7 +121,7 @@ function renderItem(date, it){
       </div>
     `;
   }
-  const timeLabel = it.endTime ? `${it.time || ''} ~ ${it.endTime}` : (it.time || '');
+  const timeLabel = it.endTime ? `${it.time || ''} - ${it.endTime}` : (it.time || '');
   return `
     <div class="item ${it.transport ? 'transport' : ''}">
       <span class="time">${escapeHtml(timeLabel)}</span>
