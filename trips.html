@@ -42,8 +42,20 @@
     color:var(--ink);
     border-radius:20px;
     padding:26px 40px 22px;
+    position:relative;
+    overflow:hidden;
     max-width:960px;
     margin:0 auto 20px;
+  }
+  .header-clouds{
+    position:absolute;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+  .header .eyebrow, .header h1, .header p{
+    position:relative;
+    z-index:1;
   }
   @media (max-width:480px){
     .header{padding:22px 20px 18px;}
@@ -178,6 +190,44 @@
 <div class="wrap">
 
   <div class="header">
+    <svg class="header-clouds" viewBox="0 0 800 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="hc" cx="35%" cy="30%" r="75%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="1"/>
+          <stop offset="100%" stop-color="#8FCBEA" stop-opacity="0.45"/>
+        </radialGradient>
+        <filter id="hblur" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+      </defs>
+      <g filter="url(#hblur)" fill="#5FA3C9" opacity="0.28">
+        <circle cx="650" cy="44" r="55"/>
+        <circle cx="708" cy="30" r="70"/>
+        <circle cx="760" cy="49" r="50"/>
+      </g>
+      <g filter="url(#hblur)" fill="url(#hc)">
+        <circle cx="640" cy="35" r="55"/>
+        <circle cx="700" cy="22" r="70"/>
+        <circle cx="755" cy="42" r="50"/>
+        <rect x="615" y="35" width="180" height="55" rx="27"/>
+      </g>
+      <g filter="url(#hblur)" fill="#5FA3C9" opacity="0.22">
+        <circle cx="68" cy="172" r="45"/>
+        <circle cx="116" cy="160" r="55"/>
+        <circle cx="166" cy="175" r="38"/>
+      </g>
+      <g filter="url(#hblur)" fill="url(#hc)" opacity="0.7">
+        <circle cx="60" cy="165" r="45"/>
+        <circle cx="110" cy="152" r="55"/>
+        <circle cx="160" cy="168" r="38"/>
+        <rect x="42" y="160" width="140" height="42" rx="21"/>
+      </g>
+      <g filter="url(#hblur)" fill="url(#hc)" opacity="0.45">
+        <circle cx="330" cy="18" r="22"/>
+        <circle cx="358" cy="12" r="16"/>
+        <rect x="316" y="14" width="60" height="16" rx="8"/>
+      </g>
+    </svg>
     <p class="eyebrow">TRIP PLANNER</p>
     <h1>내 여행들</h1>
     <p>여행을 골라서 계속 이어가거나, 새 여행을 시작해보세요.</p>
