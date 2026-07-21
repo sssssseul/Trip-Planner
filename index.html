@@ -82,7 +82,7 @@
   .header-meta{
     display:flex;
     align-items:center;
-    gap:15px;
+    gap:18px;
     margin-top:16px;
     flex-wrap:wrap;
   }
@@ -115,8 +115,12 @@
     border:1px solid rgba(62,143,192,0.35);
   }
   .date-sep{color:var(--forest-deep); font-size:13px;}
-  .save-btn{
+  .header-actions{
     margin-left:auto;
+    display:flex;
+    gap:8px;
+  }
+  .save-btn{
     display:flex;
     align-items:center;
     gap:6px;
@@ -131,7 +135,6 @@
     font-family:inherit;
   }
   .save-btn:hover{background:var(--paper);}
-  #editModeBtn{margin-left:0;}
   #editModeBtn.active{
     background:var(--pink);
     color:#fff;
@@ -148,7 +151,8 @@
     .date-field{justify-content:space-between;}
     .date-field input[type="date"]{flex:1; max-width:170px;}
     .date-sep{display:none;}
-    .save-btn{margin-left:0; width:100%; justify-content:center;}
+    .header-actions{margin-left:0; width:100%;}
+    .save-btn{flex:1; justify-content:center;}
     .daycount{text-align:center;}
   }
 
@@ -649,8 +653,10 @@
         <input type="date" id="endDate" value="2026-10-10">
       </div>
       <span class="daycount" id="dayCountLabel">3박 4일</span>
-      <button class="save-btn" onclick="saveAll()">저장</button>
-      <button id="editModeBtn" class="save-btn" onclick="toggleEditMode()">수정</button>
+      <div class="header-actions">
+        <button class="save-btn" onclick="saveAll()">저장</button>
+        <button id="editModeBtn" class="save-btn" onclick="toggleEditMode()">수정</button>
+      </div>
     </div>
   </div>
 
