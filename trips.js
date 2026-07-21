@@ -18,6 +18,25 @@ function formatRange(startDate, endDate){
   return `${startDate.replace(/-/g,'/')} → ${endDate.replace(/-/g,'/')}`;
 }
 
+async function loadSettings(){
+  try{
+    const settings = await api('GET', '/api/settings');
+    document.getElementById('tripsTitle').value = settings.tripsTitle || 'My Trips';
+  }catch(err){
+    document.getElementById('tripsTitle').value = 'My Trips';
+  }
+}
+
+document.getElementById('tripsTitle').addEventListener('change', async e => {
+  const title = e.target.value.trim();
+  if(!title){
+    e.target.value = 'My Trips';
+    return;
+  }
+  try{ await api('PUT', '/api/settings', {tripsTitle: title}); }
+  catch(err){ alert('저장 실패. 다시 시도해주세요.'); }
+});
+
 async function loadTrips(){
   const grid = document.getElementById('tripGrid');
   let trips = [];
@@ -49,7 +68,7 @@ async function loadTrips(){
         <div class="dates">${formatRange(trip.startDate, trip.endDate)}</div>
         <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '설명을 남겨보세요'}</div>
       </div>
-      <button class="edit-desc" aria-label="소감 수정">&#9998;</button>
+      <button class="edit-desc" aria-label="설명 수정">&#9998;</button>
     `;
     const delBtn = card.querySelector('.del');
     delBtn.addEventListener('click', async (e) => {
@@ -101,4 +120,5 @@ async function loadTrips(){
   }
 }
 
+loadSettings();
 loadTrips();
