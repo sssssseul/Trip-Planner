@@ -34,22 +34,18 @@
     padding:40px 24px;
   }
   .wrap{max-width:480px; margin:0 auto;}
-  .back-link{
-    display:inline-block;
-    font-size:13px;
-    color:var(--forest-deep);
-    text-decoration:none;
-    margin-bottom:16px;
-  }
-  .back-link:hover{text-decoration:underline;}
   .eyebrow{
+    display:inline-block;
     font-family:'JetBrains Mono', monospace;
     font-size:12px;
     letter-spacing:0.14em;
     text-transform:uppercase;
     color:var(--forest-deep);
     margin:0 0 8px;
+    text-decoration:none;
+    cursor:pointer;
   }
+  .eyebrow:hover{text-decoration:underline;}
   h1{
     font-size:26px;
     font-weight:700;
@@ -110,8 +106,7 @@
 </head>
 <body>
 <div class="wrap">
-  <a class="back-link" href="/trips">&larr; 내 여행들로</a>
-  <p class="eyebrow">TRIP PLANNER</p>
+  <a class="eyebrow" href="/trips">TRIP PLANNER</a>
   <h1>계정 설정</h1>
 
   <div class="card">
