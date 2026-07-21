@@ -86,7 +86,7 @@ def list_trips():
     try:
         with conn.cursor() as cur:
             cur.execute(
-                'SELECT id, title, start_date, end_date, description FROM trips ORDER BY id DESC'
+                'SELECT id, title, start_date, end_date, description FROM trips ORDER BY id ASC'
             )
             trips = cur.fetchall()
             result = [{
