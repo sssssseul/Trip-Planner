@@ -1,4 +1,5 @@
 const WEEKDAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
+const TRIP_ID = window.location.pathname.split('/').filter(Boolean).pop();
 let editingItemId = null;
 let editingChkId = null;
 let editMode = false;
@@ -22,7 +23,7 @@ function formatWeekday(dateStr){
 }
 
 async function loadTrip(){
-  state = await api('GET', '/api/trip');
+  state = await api('GET', `/api/trips/${TRIP_ID}`);
   render();
 }
 
@@ -163,13 +164,13 @@ function escapeAttr(s){
 
 document.getElementById('tripTitle').addEventListener('change', async e => {
   state.title = e.target.value;
-  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
+  try{ await api('PUT', `/api/trips/${TRIP_ID}`, {title: state.title}); }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 document.getElementById('startDate').addEventListener('change', async e => {
   const startDate = e.target.value;
   try{
-    await api('PUT', '/api/trip', {startDate, endDate: state.endDate < startDate ? startDate : state.endDate});
+    await api('PUT', `/api/trips/${TRIP_ID}`, {startDate, endDate: state.endDate < startDate ? startDate : state.endDate});
     await loadTrip();
   }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
@@ -177,7 +178,7 @@ document.getElementById('startDate').addEventListener('change', async e => {
 document.getElementById('endDate').addEventListener('change', async e => {
   const endDate = e.target.value;
   try{
-    await api('PUT', '/api/trip', {endDate, startDate: state.startDate > endDate ? endDate : state.startDate});
+    await api('PUT', `/api/trips/${TRIP_ID}`, {endDate, startDate: state.startDate > endDate ? endDate : state.startDate});
     await loadTrip();
   }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
@@ -191,7 +192,7 @@ async function addChecklist(){
   const val = input.value.trim();
   if(!val) return;
   try{
-    const item = await api('POST', '/api/checklist', {text: val});
+    const item = await api('POST', `/api/trips/${TRIP_ID}/checklist`, {text: val});
     state.checklist.push(item);
     input.value = '';
     render();
@@ -243,7 +244,7 @@ function toggleEditMode(){
 async function updateMainEvent(date, val){
   const day = state.days.find(d => d.date === date);
   if(day) day.mainEvent = val;
-  try{ await api('PUT', '/api/day', {date, mainEvent: val}); }
+  try{ await api('PUT', `/api/trips/${TRIP_ID}/day`, {date, mainEvent: val}); }
   catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
@@ -258,7 +259,7 @@ async function addItem(date){
   const text = textInput.value.trim();
   if(!text) return;
   try{
-    const item = await api('POST', '/api/items', {
+    const item = await api('POST', `/api/trips/${TRIP_ID}/items`, {
       date, time: timeStartInput.value, endTime: timeEndInput.value,
       text, note: noteInput.value.trim(), transport: transportInput.checked
     });
