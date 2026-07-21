@@ -99,6 +99,41 @@
     line-height:1.2;
     color:var(--forest-deep);
   }
+  .user-bar{
+    position:absolute;
+    top:26px;
+    right:40px;
+    z-index:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .user-bar #userName{
+    font-size:12px;
+    color:var(--forest-deep);
+  }
+  .user-bar .logout-btn{
+    background:#fff;
+    color:var(--forest-deep);
+    border:1px solid rgba(62,143,192,0.3);
+    border-radius:8px;
+    padding:6px 14px;
+    font-size:13px;
+    font-weight:500;
+    cursor:pointer;
+    font-family:inherit;
+  }
+  .user-bar .logout-btn:hover{background:var(--paper);}
+  .user-bar .account-link{
+    font-size:12px;
+    color:var(--forest-deep);
+    text-decoration:none;
+  }
+  .user-bar .account-link:hover{text-decoration:underline;}
+  @media (max-width:600px){
+    .user-bar{top:16px; right:16px; gap:6px;}
+    .user-bar #userName{display:none;}
+  }
 
   .grid{
     display:grid;
@@ -269,6 +304,11 @@
       </g>
     </svg>
     <a class="eyebrow" href="/trips">TRIP PLANNER</a>
+    <div class="user-bar">
+      <span id="userName"></span>
+      <a class="account-link" href="/account">계정 설정</a>
+      <button class="logout-btn" onclick="logout()">로그아웃</button>
+    </div>
     <input class="title-input" id="tripsTitle" placeholder="My Trips">
     <p>여행을 골라서 계속 이어가거나, 새 여행을 시작해보세요.</p>
   </div>
