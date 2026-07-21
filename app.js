@@ -164,7 +164,7 @@ function escapeAttr(s){
 
 document.getElementById('tripTitle').addEventListener('change', async e => {
   state.title = e.target.value;
-  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  try{ await api('PUT', '/api/trip', {title: state.title}); }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 document.getElementById('startDate').addEventListener('change', async e => {
@@ -172,7 +172,7 @@ document.getElementById('startDate').addEventListener('change', async e => {
   try{
     await api('PUT', '/api/trip', {startDate, endDate: state.endDate < startDate ? startDate : state.endDate});
     await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 document.getElementById('endDate').addEventListener('change', async e => {
@@ -180,7 +180,7 @@ document.getElementById('endDate').addEventListener('change', async e => {
   try{
     await api('PUT', '/api/trip', {endDate, startDate: state.startDate > endDate ? endDate : state.startDate});
     await loadTrip();
-  }catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
 // ---------- checklist ----------
@@ -196,7 +196,7 @@ async function addChecklist(){
     state.checklist.push(item);
     input.value = '';
     render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('추가 실패. 다시 시도해주세요.'); }
 }
 
 async function toggleChk(id){
@@ -205,7 +205,7 @@ async function toggleChk(id){
   item.done = !item.done;
   render();
   try{ await api('PATCH', `/api/checklist/${id}`, {done: item.done}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 async function delChk(id){
@@ -213,7 +213,7 @@ async function delChk(id){
   if(editingChkId === id) editingChkId = null;
   render();
   try{ await api('DELETE', `/api/checklist/${id}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('삭제 실패. 다시 시도해주세요.'); }
 }
 
 function startEditChk(id){
@@ -232,7 +232,7 @@ async function saveEditChk(id){
   editingChkId = null;
   render();
   try{ await api('PATCH', `/api/checklist/${id}`, {text}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 function toggleChecklistEditMode(){
   checklistEditMode = !checklistEditMode;
@@ -245,7 +245,7 @@ async function updateMainEvent(date, val){
   const day = state.days.find(d => d.date === date);
   if(day) day.mainEvent = val;
   try{ await api('PUT', '/api/day', {date, mainEvent: val}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 // ---------- itinerary items ----------
@@ -267,7 +267,7 @@ async function addItem(date){
     day.items.push(item);
     noteInput.value = '';
     render();
-  }catch(err){ showToast('추가 실패, 다시 시도해주세요.'); }
+  }catch(err){ showToast('추가 실패. 다시 시도해주세요.'); }
 }
 
 function startEditItem(itemId){
@@ -297,7 +297,7 @@ async function saveEditItem(itemId){
   editingItemId = null;
   render();
   try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, note, transport}); }
-  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
 async function delItem(itemId){
@@ -305,7 +305,7 @@ async function delItem(itemId){
   if(editingItemId === itemId) editingItemId = null;
   render();
   try{ await api('DELETE', `/api/items/${itemId}`); }
-  catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
+  catch(err){ showToast('삭제 실패. 다시 시도해주세요.'); }
 }
 
 // ---------- save button ----------
