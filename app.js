@@ -95,12 +95,12 @@ function render(){
             <span class="time-sep">~</span>
             <input type="time" id="time-end-${day.date}">
           </div>
-          <input type="text" id="text-${day.date}" placeholder="일정 입력 (예: ICN > NRT)">
-          <input type="text" id="note-${day.date}" placeholder="메모 (선택)">
+          <input type="text" id="text-${day.date}" placeholder="일정">
+          <input type="text" id="note-${day.date}" placeholder="메모">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
-          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
+          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 추가</button>
         </div>
       </div>
     `;
@@ -117,8 +117,8 @@ function renderItem(date, it){
           <span class="time-sep">~</span>
           <input type="time" id="edit-time-end-${it.id}" value="${escapeAttr(it.endTime || '')}">
         </div>
-        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}" placeholder="일정 입력">
-        <input type="text" id="edit-note-${it.id}" value="${escapeAttr(it.note || '')}" placeholder="메모 (선택)">
+        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}" placeholder="일정">
+        <input type="text" id="edit-note-${it.id}" value="${escapeAttr(it.note || '')}" placeholder="메모">
         <div class="edit-controls">
           <label class="toggle-transport">
             <input type="checkbox" id="edit-transport-${it.id}" ${it.transport ? 'checked' : ''}> 이동/교통
@@ -138,7 +138,6 @@ function renderItem(date, it){
         <div class="item-main">
           <span class="time">${escapeHtml(timeLabel)}</span>
           <span class="text">${escapeHtml(it.text)}</span>
-          ${it.note ? `<span class="note">${escapeHtml(it.note)}</span>` : ''}
         </div>
         ${editMode ? `
         <div class="actions">
@@ -146,6 +145,7 @@ function renderItem(date, it){
           <button class="del-btn" onclick="delItem(${it.id})" aria-label="삭제">&times;</button>
         </div>` : ''}
       </div>
+      ${it.note ? `<span class="note">${escapeHtml(it.note)}</span>` : ''}
     </div>
   `;
 }
