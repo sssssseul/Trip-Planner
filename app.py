@@ -85,26 +85,17 @@ def list_trips():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT id, title, start_date, end_date FROM trips ORDER BY id DESC')
+            cur.execute(
+                'SELECT id, title, start_date, end_date, description FROM trips ORDER BY id DESC'
+            )
             trips = cur.fetchall()
-            result = []
-            for t in trips:
-                cur.execute(
-                    'SELECT COUNT(*) AS c FROM checklist_items WHERE trip_id = %s', (t['id'],)
-                )
-                chk_count = cur.fetchone()['c']
-                cur.execute(
-                    'SELECT COUNT(*) AS c FROM itinerary_items WHERE trip_id = %s', (t['id'],)
-                )
-                item_count = cur.fetchone()['c']
-                result.append({
-                    'id': t['id'],
-                    'title': t['title'],
-                    'startDate': t['start_date'],
-                    'endDate': t['end_date'],
-                    'checklistCount': chk_count,
-                    'itemCount': item_count,
-                })
+            result = [{
+                'id': t['id'],
+                'title': t['title'],
+                'startDate': t['start_date'],
+                'endDate': t['end_date'],
+                'description': t['description'] or '',
+            } for t in trips]
         return jsonify(result)
     except Exception as e:
         app.logger.exception(e)
@@ -229,8 +220,10 @@ def update_trip(trip_id):
             cur.execute(
                 'UPDATE trips SET title = COALESCE(%s, title), '
                 'start_date = COALESCE(%s, start_date), '
-                'end_date = COALESCE(%s, end_date) WHERE id = %s',
-                (data.get('title'), data.get('startDate'), data.get('endDate'), trip_id)
+                'end_date = COALESCE(%s, end_date), '
+                'description = COALESCE(%s, description) WHERE id = %s',
+                (data.get('title'), data.get('startDate'), data.get('endDate'),
+                 data.get('description'), trip_id)
             )
         conn.commit()
         return jsonify({'ok': True})
