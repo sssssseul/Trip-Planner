@@ -98,12 +98,7 @@
     z-index:1;
     display:flex;
     align-items:center;
-    gap:14px;
-  }
-  .user-bar #userName{
-    font-size:16px;
-    font-weight:700;
-    color:var(--ink);
+    gap:10px;
   }
   .user-bar .logout-btn{
     background:#fff;
@@ -126,8 +121,7 @@
   }
   .user-bar .account-link:hover{background:var(--sand); color:var(--forest-deep);}
   @media (max-width:600px){
-    .user-bar{top:16px; right:16px; gap:8px;}
-    .user-bar #userName{font-size:14px;}
+    .user-bar{top:16px; right:16px; gap:6px;}
   }
   .header-meta{
     display:flex;
@@ -694,7 +688,6 @@
     </svg>
     <a class="eyebrow" href="/trips">TRIP PLANNER</a>
     <div class="user-bar">
-      <span id="userName"></span>
       <a class="account-link" href="/account">계정 설정</a>
       <button class="logout-btn" onclick="logout()">로그아웃</button>
     </div>
