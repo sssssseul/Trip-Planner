@@ -12,13 +12,6 @@ async function api(method, url, body){
   return res.json();
 }
 
-async function loadMe(){
-  try{
-    const me = await api('GET', '/api/me');
-    document.getElementById('userName').textContent = me.username || '';
-  }catch(err){}
-}
-
 async function logout(){
   try{ await api('POST', '/api/logout'); }catch(err){}
   window.location.href = '/login';
@@ -37,16 +30,16 @@ function formatRange(startDate, endDate){
 async function loadSettings(){
   try{
     const settings = await api('GET', '/api/settings');
-    document.getElementById('tripsTitle').value = settings.tripsTitle || 'My Trips';
+    document.getElementById('tripsTitle').value = settings.tripsTitle || '내 여행들';
   }catch(err){
-    document.getElementById('tripsTitle').value = 'My Trips';
+    document.getElementById('tripsTitle').value = '내 여행들';
   }
 }
 
 document.getElementById('tripsTitle').addEventListener('change', async e => {
   const title = e.target.value.trim();
   if(!title){
-    e.target.value = 'My Trips';
+    e.target.value = '내 여행들';
     return;
   }
   try{ await api('PUT', '/api/settings', {tripsTitle: title}); }
@@ -82,9 +75,9 @@ async function loadTrips(){
       </div>
       <div class="body">
         <div class="dates">${formatRange(trip.startDate, trip.endDate)}</div>
-        <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '소감을 남겨보세요'}</div>
+        <div class="desc ${trip.description ? '' : 'empty'}">${trip.description ? escapeHtml(trip.description) : '설명을 남겨보세요'}</div>
       </div>
-      <button class="edit-desc" aria-label="소감 수정">&#9998;</button>
+      <button class="edit-desc" aria-label="설명 수정">&#9998;</button>
     `;
     const delBtn = card.querySelector('.del');
     delBtn.addEventListener('click', async (e) => {
@@ -136,6 +129,5 @@ async function loadTrips(){
   }
 }
 
-loadMe();
 loadSettings();
 loadTrips();
