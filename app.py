@@ -5,7 +5,9 @@ from flask import Flask, request, jsonify, send_from_directory
 import psycopg2
 import psycopg2.extras
 
-app = Flask(__name__, static_folder='public', static_url_path='')
+app = Flask(__name__)
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
@@ -58,7 +60,12 @@ def date_range(start_str, end_str):
 
 @app.route('/')
 def index():
-    return send_from_directory(app.static_folder, 'index.html')
+    return send_from_directory(BASE_DIR, 'index.html')
+
+
+@app.route('/app.js')
+def app_js():
+    return send_from_directory(BASE_DIR, 'app.js')
 
 
 # ---------- trip ----------
