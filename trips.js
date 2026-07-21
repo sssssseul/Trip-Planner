@@ -93,7 +93,7 @@ async function loadTrips(){
     const editBtn = card.querySelector('.edit-desc');
     editBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      const newDesc = prompt('이 여행에 대한 소감을 남겨보세요', trip.description || '');
+      const newDesc = prompt('이 여행에 대한 설명을 남겨보세요', trip.description || '');
       if(newDesc === null) return;
       try{
         await api('PUT', `/api/trips/${trip.id}`, {description: newDesc});
