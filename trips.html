@@ -54,13 +54,13 @@
     z-index:0;
     pointer-events:none;
   }
-  .header .eyebrow, .header h1, .header p{
+  .header .eyebrow, .header .title-input, .header p{
     position:relative;
     z-index:1;
   }
   @media (max-width:480px){
     .header{padding:22px 20px 18px; height:auto; min-height:190px;}
-    .header h1{font-size:26px;}
+    .title-input{font-size:26px;}
   }
   .eyebrow{
     font-family:'JetBrains Mono', monospace;
@@ -71,13 +71,23 @@
     color:var(--forest-deep);
     margin:0 0 10px;
   }
-  .header h1{
+  .title-input{
+    display:block;
+    margin:0;
+    -webkit-appearance:none;
+    appearance:none;
     font-family:'Noto Sans KR', 'Noto Sans JP', -apple-system, sans-serif;
     font-weight:700;
     font-size:34px;
     line-height:1.2;
-    margin:0;
+    background:transparent;
+    border:none;
     color:var(--ink);
+    outline:none;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    padding:0;
   }
   .header p{
     margin:16px 0 0;
@@ -255,7 +265,7 @@
       </g>
     </svg>
     <p class="eyebrow">TRIP PLANNER</p>
-    <h1>My Trips</h1>
+    <input class="title-input" id="tripsTitle" placeholder="My Trips">
     <p>여행을 골라서 계속 이어가거나, 새 여행을 시작해보세요.</p>
   </div>
 
