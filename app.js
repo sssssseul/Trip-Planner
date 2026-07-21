@@ -1,6 +1,8 @@
 const WEEKDAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
 let editingItemId = null;
 let editingChkId = null;
+let checklistEditMode = false;
+let dayEditMode = {};
 let state = null; // loaded from server
 
 async function api(method, url, body){
@@ -33,6 +35,9 @@ function render(){
   const nights = Math.max(0, state.days.length - 1);
   document.getElementById('dayCountLabel').textContent = `${nights}박 ${state.days.length}일`;
 
+  const chkModeBtn = document.getElementById('chkModeBtn');
+  if(chkModeBtn) chkModeBtn.classList.toggle('active', checklistEditMode);
+
   const chkWrap = document.getElementById('chkList');
   chkWrap.innerHTML = '';
   state.checklist.forEach(item => {
@@ -49,10 +54,11 @@ function render(){
       row.innerHTML = `
         <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChk(${item.id})">
         <span>${escapeHtml(item.text)}</span>
+        ${checklistEditMode ? `
         <div class="actions">
           <button class="edit-btn" onclick="startEditChk(${item.id})" aria-label="수정">&#9998;</button>
           <button class="del" onclick="delChk(${item.id})" aria-label="삭제">&times;</button>
-        </div>
+        </div>` : ''}
       `;
     }
     chkWrap.appendChild(row);
@@ -87,11 +93,15 @@ function render(){
             <span class="time-sep">~</span>
             <input type="time" id="time-end-${day.date}">
           </div>
-          <input type="text" id="text-${day.date}" placeholder="일정 입력">
+          <input type="text" id="text-${day.date}" placeholder="일정 입력 (예: ICN > NRT)">
+          <input type="text" id="note-${day.date}" placeholder="메모 (선택)">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
-          <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
+          <div class="item-add-actions">
+            <button class="item-add-btn" onclick="addItem('${day.date}')">+ 일정 추가</button>
+            <button class="item-mode-btn ${dayEditMode[day.date] ? 'active' : ''}" onclick="toggleDayEditMode('${day.date}')">+ 수정</button>
+          </div>
         </div>
       </div>
     `;
@@ -108,7 +118,8 @@ function renderItem(date, it){
           <span class="time-sep">~</span>
           <input type="time" id="edit-time-end-${it.id}" value="${escapeAttr(it.endTime || '')}">
         </div>
-        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}">
+        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}" placeholder="일정 입력">
+        <input type="text" id="edit-note-${it.id}" value="${escapeAttr(it.note || '')}" placeholder="메모 (선택)">
         <div class="edit-controls">
           <label class="toggle-transport">
             <input type="checkbox" id="edit-transport-${it.id}" ${it.transport ? 'checked' : ''}> 이동/교통
@@ -124,12 +135,16 @@ function renderItem(date, it){
   const timeLabel = it.endTime ? `${it.time || ''} - ${it.endTime}` : (it.time || '');
   return `
     <div class="item ${it.transport ? 'transport' : ''}">
-      <span class="time">${escapeHtml(timeLabel)}</span>
-      <span class="text">${escapeHtml(it.text)}</span>
-      <div class="actions">
-        <button onclick="startEditItem(${it.id})" aria-label="수정">&#9998;</button>
-        <button class="del-btn" onclick="delItem(${it.id})" aria-label="삭제">&times;</button>
+      <div class="item-top">
+        <span class="time">${escapeHtml(timeLabel)}</span>
+        ${dayEditMode[date] ? `
+        <div class="actions">
+          <button onclick="startEditItem(${it.id})" aria-label="수정">&#9998;</button>
+          <button class="del-btn" onclick="delItem(${it.id})" aria-label="삭제">&times;</button>
+        </div>` : ''}
       </div>
+      <span class="text">${escapeHtml(it.text)}</span>
+      ${it.note ? `<span class="note">${escapeHtml(it.note)}</span>` : ''}
     </div>
   `;
 }
@@ -217,6 +232,10 @@ async function saveEditChk(id){
   try{ await api('PATCH', `/api/checklist/${id}`, {text}); }
   catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
+function toggleChecklistEditMode(){
+  checklistEditMode = !checklistEditMode;
+  render();
+}
 
 // ---------- day main event ----------
 
@@ -233,15 +252,18 @@ async function addItem(date){
   const timeStartInput = document.getElementById('time-start-' + date);
   const timeEndInput = document.getElementById('time-end-' + date);
   const textInput = document.getElementById('text-' + date);
+  const noteInput = document.getElementById('note-' + date);
   const transportInput = document.getElementById('transport-' + date);
   const text = textInput.value.trim();
   if(!text) return;
   try{
     const item = await api('POST', '/api/items', {
-      date, time: timeStartInput.value, endTime: timeEndInput.value, text, transport: transportInput.checked
+      date, time: timeStartInput.value, endTime: timeEndInput.value,
+      text, note: noteInput.value.trim(), transport: transportInput.checked
     });
     const day = state.days.find(d => d.date === date);
     day.items.push(item);
+    noteInput.value = '';
     render();
   }catch(err){ showToast('추가 실패. 다시 시도해주세요.'); }
 }
@@ -254,20 +276,25 @@ function cancelEditItem(){
   editingItemId = null;
   render();
 }
+function toggleDayEditMode(date){
+  dayEditMode[date] = !dayEditMode[date];
+  render();
+}
 
 async function saveEditItem(itemId){
   const time = document.getElementById('edit-time-' + itemId).value;
   const endTime = document.getElementById('edit-time-end-' + itemId).value;
   const text = document.getElementById('edit-text-' + itemId).value.trim();
+  const note = document.getElementById('edit-note-' + itemId).value.trim();
   const transport = document.getElementById('edit-transport-' + itemId).checked;
   if(!text) return;
   for(const day of state.days){
     const item = day.items.find(it => it.id === itemId);
-    if(item){ item.time = time; item.endTime = endTime; item.text = text; item.transport = transport; break; }
+    if(item){ item.time = time; item.endTime = endTime; item.text = text; item.note = note; item.transport = transport; break; }
   }
   editingItemId = null;
   render();
-  try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, transport}); }
+  try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, note, transport}); }
   catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 }
 
