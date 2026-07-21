@@ -101,16 +101,17 @@
   }
   .user-bar{
     position:absolute;
-    top:26px;
+    top:24px;
     right:40px;
     z-index:1;
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:14px;
   }
   .user-bar #userName{
-    font-size:12px;
-    color:var(--forest-deep);
+    font-size:16px;
+    font-weight:700;
+    color:var(--ink);
   }
   .user-bar .logout-btn{
     background:#fff;
@@ -126,13 +127,15 @@
   .user-bar .logout-btn:hover{background:var(--paper);}
   .user-bar .account-link{
     font-size:12px;
-    color:var(--forest-deep);
+    color:var(--muted);
     text-decoration:none;
+    padding:5px 9px;
+    border-radius:6px;
   }
-  .user-bar .account-link:hover{text-decoration:underline;}
+  .user-bar .account-link:hover{background:var(--sand); color:var(--forest-deep);}
   @media (max-width:600px){
-    .user-bar{top:16px; right:16px; gap:6px;}
-    .user-bar #userName{display:none;}
+    .user-bar{top:16px; right:16px; gap:8px;}
+    .user-bar #userName{font-size:14px;}
   }
 
   .grid{
