@@ -1,0 +1,317 @@
+import os
+from datetime import datetime, timedelta
+
+from flask import Flask, request, jsonify, send_from_directory
+import psycopg2
+import psycopg2.extras
+
+app = Flask(__name__, static_folder='public', static_url_path='')
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+
+def get_conn():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+def init_db():
+    schema_path = os.path.join(os.path.dirname(__file__), 'schema.sql')
+    with open(schema_path, 'r', encoding='utf-8') as f:
+        schema = f.read()
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(schema)
+        conn.commit()
+        with conn.cursor() as cur:
+            cur.execute('SELECT id FROM trips ORDER BY id LIMIT 1')
+            row = cur.fetchone()
+            if not row:
+                cur.execute(
+                    'INSERT INTO trips (title, start_date, end_date) VALUES (%s, %s, %s)',
+                    ('나의 여행', '2026-10-07', '2026-10-10')
+                )
+                conn.commit()
+    finally:
+        conn.close()
+
+
+def get_trip_id(cur):
+    cur.execute('SELECT id FROM trips ORDER BY id LIMIT 1')
+    return cur.fetchone()['id']
+
+
+def date_range(start_str, end_str):
+    start = datetime.strptime(start_str, '%Y-%m-%d').date()
+    end = datetime.strptime(end_str, '%Y-%m-%d').date()
+    if end < start:
+        return [start_str]
+    days = []
+    cur = start
+    while cur <= end:
+        days.append(cur.isoformat())
+        cur += timedelta(days=1)
+    return days
+
+
+# ---------- 화면 ----------
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+
+# ---------- trip ----------
+
+@app.route('/api/trip', methods=['GET'])
+def get_trip():
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute('SELECT * FROM trips WHERE id = %s', (trip_id,))
+            trip = cur.fetchone()
+
+            cur.execute(
+                'SELECT id, text, done FROM checklist_items WHERE trip_id = %s ORDER BY sort_order, id',
+                (trip_id,)
+            )
+            checklist = cur.fetchall()
+
+            cur.execute(
+                'SELECT event_date, main_event FROM day_events WHERE trip_id = %s',
+                (trip_id,)
+            )
+            main_events = {r['event_date']: r['main_event'] for r in cur.fetchall()}
+
+            cur.execute(
+                'SELECT id, event_date, time, text, transport FROM itinerary_items '
+                'WHERE trip_id = %s ORDER BY event_date, sort_order, id',
+                (trip_id,)
+            )
+            item_rows = cur.fetchall()
+
+        items_by_date = {}
+        for r in item_rows:
+            items_by_date.setdefault(r['event_date'], []).append({
+                'id': r['id'],
+                'time': r['time'] or '',
+                'text': r['text'],
+                'transport': r['transport'],
+            })
+
+        days = []
+        for d in date_range(trip['start_date'], trip['end_date']):
+            days.append({
+                'date': d,
+                'mainEvent': main_events.get(d, ''),
+                'items': items_by_date.get(d, []),
+            })
+
+        return jsonify({
+            'id': trip['id'],
+            'title': trip['title'],
+            'startDate': trip['start_date'],
+            'endDate': trip['end_date'],
+            'checklist': checklist,
+            'days': days,
+        })
+    except Exception as e:
+        app.logger.exception(e)
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/trip', methods=['PUT'])
+def update_trip():
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'UPDATE trips SET title = COALESCE(%s, title), '
+                'start_date = COALESCE(%s, start_date), '
+                'end_date = COALESCE(%s, end_date) WHERE id = %s',
+                (data.get('title'), data.get('startDate'), data.get('endDate'), trip_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- checklist ----------
+
+@app.route('/api/checklist', methods=['POST'])
+def add_checklist():
+    data = request.get_json(force=True) or {}
+    text = (data.get('text') or '').strip()
+    if not text:
+        return jsonify({'error': 'text_required'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'INSERT INTO checklist_items (trip_id, text, done) VALUES (%s, %s, false) '
+                'RETURNING id, text, done',
+                (trip_id, text)
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return jsonify(row)
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/checklist/<int:item_id>', methods=['PATCH'])
+def update_checklist(item_id):
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'UPDATE checklist_items SET done = COALESCE(%s, done), '
+                'text = COALESCE(%s, text) WHERE id = %s',
+                (data.get('done'), data.get('text'), item_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/checklist/<int:item_id>', methods=['DELETE'])
+def delete_checklist(item_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM checklist_items WHERE id = %s', (item_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- day main event ----------
+
+@app.route('/api/day', methods=['PUT'])
+def upsert_day():
+    data = request.get_json(force=True) or {}
+    date_str = data.get('date')
+    main_event = data.get('mainEvent', '')
+    if not date_str:
+        return jsonify({'error': 'date_required'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                '''INSERT INTO day_events (trip_id, event_date, main_event)
+                   VALUES (%s, %s, %s)
+                   ON CONFLICT (trip_id, event_date)
+                   DO UPDATE SET main_event = EXCLUDED.main_event''',
+                (trip_id, date_str, main_event)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- itinerary items ----------
+
+@app.route('/api/items', methods=['POST'])
+def add_item():
+    data = request.get_json(force=True) or {}
+    date_str = data.get('date')
+    text = (data.get('text') or '').strip()
+    time_str = data.get('time') or ''
+    transport = bool(data.get('transport'))
+    if not date_str or not text:
+        return jsonify({'error': 'invalid'}), 400
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            trip_id = get_trip_id(cur)
+            cur.execute(
+                'INSERT INTO itinerary_items (trip_id, event_date, time, text, transport) '
+                'VALUES (%s, %s, %s, %s, %s) '
+                'RETURNING id, event_date, time, text, transport',
+                (trip_id, date_str, time_str, text, transport)
+            )
+            row = cur.fetchone()
+        conn.commit()
+        return jsonify(row)
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/items/<int:item_id>', methods=['PATCH'])
+def update_item(item_id):
+    data = request.get_json(force=True) or {}
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'UPDATE itinerary_items SET time = COALESCE(%s, time), '
+                'text = COALESCE(%s, text), transport = COALESCE(%s, transport) WHERE id = %s',
+                (data.get('time'), data.get('text'), data.get('transport'), item_id)
+            )
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/items/<int:item_id>', methods=['DELETE'])
+def delete_item(item_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM itinerary_items WHERE id = %s', (item_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+init_db()
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 3000))
+    app.run(host='0.0.0.0', port=port)
