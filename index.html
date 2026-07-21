@@ -384,8 +384,10 @@
   }
   .item-main{
     display:flex;
-    align-items:flex-start;
-    gap:7px;
+    flex-wrap:wrap;
+    align-items:baseline;
+    row-gap:2px;
+    column-gap:7px;
     min-width:0;
     flex:1;
   }
@@ -398,7 +400,7 @@
     padding:2px 6px;
     white-space:nowrap;
     flex-shrink:0;
-    margin-top:1px;
+    align-self:flex-start;
   }
   .item.transport .time{background:var(--pink);color:#fff;}
   .item .text{
@@ -410,6 +412,7 @@
     line-height:1.4;
     color:var(--muted);
   }
+  .item .note::before{content:" "; color:var(--sand-line);}
   .item .actions{
     display:flex;
     gap:2px;
