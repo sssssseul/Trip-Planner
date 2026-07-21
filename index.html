@@ -180,7 +180,7 @@
   /* layout */
   .board{
     display:grid;
-    grid-template-columns:300px 1fr;
+    grid-template-columns:330px 1fr;
     gap:16px;
     align-items:start;
   }
@@ -418,6 +418,7 @@
     padding:6px 6px;
     font-size:12px;
     font-family:'JetBrains Mono', monospace;
+    color:#555555;
   }
   .time-sep{color:var(--muted); font-size:12px; flex-shrink:0;}
   .item-edit input[type="text"]{
@@ -476,6 +477,7 @@
     padding:6px 6px;
     font-size:12px;
     font-family:'JetBrains Mono', monospace;
+    color:#555555;
   }
   .item-add input[type="text"]{
     width:100%;
@@ -581,7 +583,7 @@
       <h2>CHECK LIST</h2>
       <div id="chkList"></div>
       <div class="add-row">
-        <input id="chkInput" type="text" placeholder="어디서 뭐할까">
+        <input id="chkInput" type="text" placeholder="어디서 뭐하지?">
         <button onclick="addChecklist()">+</button>
       </div>
     </div>
