@@ -64,7 +64,11 @@
     text-transform:uppercase;
     color:var(--forest-deep);
     margin:0 0 10px;
+    display:inline-block;
+    text-decoration:none;
+    cursor:pointer;
   }
+  a.eyebrow:hover{text-decoration:underline;}
   .title-input{
     font-family:'Noto Sans KR', -apple-system, sans-serif;
     font-weight:700;
@@ -640,7 +644,7 @@
         <rect x="316" y="14" width="60" height="16" rx="8"/>
       </g>
     </svg>
-    <p class="eyebrow">TRIP PLANNER</p>
+    <a class="eyebrow" href="/trips">TRIP PLANNER</a>
     <input class="title-input" id="tripTitle" placeholder="Trip Planner">
     <div class="header-meta">
       <div class="date-field">
