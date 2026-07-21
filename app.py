@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta
 
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 import psycopg2
 import psycopg2.extras
 
@@ -38,11 +38,6 @@ def init_db():
         conn.close()
 
 
-def get_trip_id(cur):
-    cur.execute('SELECT id FROM trips ORDER BY id LIMIT 1')
-    return cur.fetchone()['id']
-
-
 def date_range(start_str, end_str):
     start = datetime.strptime(start_str, '%Y-%m-%d').date()
     end = datetime.strptime(end_str, '%Y-%m-%d').date()
@@ -59,7 +54,22 @@ def date_range(start_str, end_str):
 # ---------- 화면 ----------
 
 @app.route('/')
-def index():
+def root():
+    return redirect('/trips')
+
+
+@app.route('/trips')
+def trips_page():
+    return send_from_directory(BASE_DIR, 'trips.html')
+
+
+@app.route('/trips.js')
+def trips_js():
+    return send_from_directory(BASE_DIR, 'trips.js')
+
+
+@app.route('/trip/<int:trip_id>')
+def trip_page(trip_id):
     return send_from_directory(BASE_DIR, 'index.html')
 
 
@@ -68,16 +78,94 @@ def app_js():
     return send_from_directory(BASE_DIR, 'app.js')
 
 
-# ---------- trip ----------
+# ---------- trips list ----------
 
-@app.route('/api/trip', methods=['GET'])
-def get_trip():
+@app.route('/api/trips', methods=['GET'])
+def list_trips():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            trip_id = get_trip_id(cur)
+            cur.execute('SELECT id, title, start_date, end_date FROM trips ORDER BY id DESC')
+            trips = cur.fetchall()
+            result = []
+            for t in trips:
+                cur.execute(
+                    'SELECT COUNT(*) AS c FROM checklist_items WHERE trip_id = %s', (t['id'],)
+                )
+                chk_count = cur.fetchone()['c']
+                cur.execute(
+                    'SELECT COUNT(*) AS c FROM itinerary_items WHERE trip_id = %s', (t['id'],)
+                )
+                item_count = cur.fetchone()['c']
+                result.append({
+                    'id': t['id'],
+                    'title': t['title'],
+                    'startDate': t['start_date'],
+                    'endDate': t['end_date'],
+                    'checklistCount': chk_count,
+                    'itemCount': item_count,
+                })
+        return jsonify(result)
+    except Exception as e:
+        app.logger.exception(e)
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/trips', methods=['POST'])
+def create_trip():
+    data = request.get_json(force=True) or {}
+    title = (data.get('title') or '').strip() or '새 여행'
+    today = datetime.now().date().isoformat()
+    start_date = data.get('startDate') or today
+    end_date = data.get('endDate') or start_date
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                'INSERT INTO trips (title, start_date, end_date) VALUES (%s, %s, %s) '
+                'RETURNING id',
+                (title, start_date, end_date)
+            )
+            new_id = cur.fetchone()['id']
+        conn.commit()
+        return jsonify({'id': new_id})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+@app.route('/api/trips/<int:trip_id>', methods=['DELETE'])
+def delete_trip(trip_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
+            cur.execute('DELETE FROM trips WHERE id = %s', (trip_id,))
+        conn.commit()
+        return jsonify({'ok': True})
+    except Exception as e:
+        app.logger.exception(e)
+        conn.rollback()
+        return jsonify({'error': 'server_error'}), 500
+    finally:
+        conn.close()
+
+
+# ---------- single trip ----------
+
+@app.route('/api/trips/<int:trip_id>', methods=['GET'])
+def get_trip(trip_id):
+    conn = get_conn()
+    try:
+        with conn.cursor() as cur:
             cur.execute('SELECT * FROM trips WHERE id = %s', (trip_id,))
             trip = cur.fetchone()
+            if not trip:
+                return jsonify({'error': 'not_found'}), 404
 
             cur.execute(
                 'SELECT id, text, done FROM checklist_items WHERE trip_id = %s ORDER BY sort_order, id',
@@ -132,13 +220,12 @@ def get_trip():
         conn.close()
 
 
-@app.route('/api/trip', methods=['PUT'])
-def update_trip():
+@app.route('/api/trips/<int:trip_id>', methods=['PUT'])
+def update_trip(trip_id):
     data = request.get_json(force=True) or {}
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            trip_id = get_trip_id(cur)
             cur.execute(
                 'UPDATE trips SET title = COALESCE(%s, title), '
                 'start_date = COALESCE(%s, start_date), '
@@ -157,8 +244,8 @@ def update_trip():
 
 # ---------- checklist ----------
 
-@app.route('/api/checklist', methods=['POST'])
-def add_checklist():
+@app.route('/api/trips/<int:trip_id>/checklist', methods=['POST'])
+def add_checklist(trip_id):
     data = request.get_json(force=True) or {}
     text = (data.get('text') or '').strip()
     if not text:
@@ -166,7 +253,6 @@ def add_checklist():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            trip_id = get_trip_id(cur)
             cur.execute(
                 'INSERT INTO checklist_items (trip_id, text, done) VALUES (%s, %s, false) '
                 'RETURNING id, text, done',
@@ -222,8 +308,8 @@ def delete_checklist(item_id):
 
 # ---------- day main event ----------
 
-@app.route('/api/day', methods=['PUT'])
-def upsert_day():
+@app.route('/api/trips/<int:trip_id>/day', methods=['PUT'])
+def upsert_day(trip_id):
     data = request.get_json(force=True) or {}
     date_str = data.get('date')
     main_event = data.get('mainEvent', '')
@@ -232,7 +318,6 @@ def upsert_day():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            trip_id = get_trip_id(cur)
             cur.execute(
                 '''INSERT INTO day_events (trip_id, event_date, main_event)
                    VALUES (%s, %s, %s)
@@ -252,8 +337,8 @@ def upsert_day():
 
 # ---------- itinerary items ----------
 
-@app.route('/api/items', methods=['POST'])
-def add_item():
+@app.route('/api/trips/<int:trip_id>/items', methods=['POST'])
+def add_item(trip_id):
     data = request.get_json(force=True) or {}
     date_str = data.get('date')
     text = (data.get('text') or '').strip()
@@ -266,7 +351,6 @@ def add_item():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            trip_id = get_trip_id(cur)
             cur.execute(
                 'INSERT INTO itinerary_items (trip_id, event_date, time, end_time, text, note, transport) '
                 'VALUES (%s, %s, %s, %s, %s, %s, %s) '
