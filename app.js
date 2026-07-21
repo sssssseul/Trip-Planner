@@ -11,8 +11,24 @@ async function api(method, url, body){
     headers: body ? {'Content-Type':'application/json'} : undefined,
     body: body ? JSON.stringify(body) : undefined
   });
+  if(res.status === 401){
+    window.location.href = '/login';
+    throw new Error('로그인이 필요해요.');
+  }
   if(!res.ok) throw new Error('요청 실패: ' + url);
   return res.json();
+}
+
+async function loadMe(){
+  try{
+    const me = await api('GET', '/api/me');
+    document.getElementById('userName').textContent = me.username || '';
+  }catch(err){}
+}
+
+async function logout(){
+  try{ await api('POST', '/api/logout'); }catch(err){}
+  window.location.href = '/login';
 }
 
 function formatWeekday(dateStr){
@@ -322,4 +338,5 @@ function showToast(msg){
   toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
+loadMe();
 loadTrip().catch(() => showToast('불러오기 실패. 새로고침해보세요.'));
