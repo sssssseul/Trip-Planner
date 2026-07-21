@@ -1,5 +1,6 @@
 const WEEKDAYS = ['일요일','월요일','화요일','수요일','목요일','금요일','토요일'];
 let editingItemId = null;
+let editingChkId = null;
 let state = null; // loaded from server
 
 async function api(method, url, body){
@@ -36,12 +37,24 @@ function render(){
   chkWrap.innerHTML = '';
   state.checklist.forEach(item => {
     const row = document.createElement('div');
-    row.className = 'chk-item' + (item.done ? ' done' : '');
-    row.innerHTML = `
-      <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChk(${item.id})">
-      <span>${escapeHtml(item.text)}</span>
-      <button class="del" onclick="delChk(${item.id})">&times;</button>
-    `;
+    if(editingChkId === item.id){
+      row.className = 'chk-edit';
+      row.innerHTML = `
+        <input type="text" id="edit-chk-${item.id}" value="${escapeAttr(item.text)}">
+        <button class="cancel-chk" onclick="cancelEditChk()">취소</button>
+        <button class="save-chk" onclick="saveEditChk(${item.id})">저장</button>
+      `;
+    }else{
+      row.className = 'chk-item' + (item.done ? ' done' : '');
+      row.innerHTML = `
+        <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleChk(${item.id})">
+        <span>${escapeHtml(item.text)}</span>
+        <div class="actions">
+          <button class="edit-btn" onclick="startEditChk(${item.id})" aria-label="수정">&#9998;</button>
+          <button class="del" onclick="delChk(${item.id})" aria-label="삭제">&times;</button>
+        </div>
+      `;
+    }
     chkWrap.appendChild(row);
   });
 
@@ -70,9 +83,11 @@ function render(){
         </div>
         <div class="item-add">
           <div class="item-add-row">
-            <input type="time" id="time-${day.date}">
-            <input type="text" id="text-${day.date}" placeholder="일정 입력">
+            <input type="time" id="time-start-${day.date}">
+            <span class="time-sep">~</span>
+            <input type="time" id="time-end-${day.date}">
           </div>
+          <input type="text" id="text-${day.date}" placeholder="일정 입력">
           <label class="toggle-transport">
             <input type="checkbox" id="transport-${day.date}"> 이동/교통
           </label>
@@ -90,8 +105,10 @@ function renderItem(date, it){
       <div class="item-edit">
         <div class="item-edit-row">
           <input type="time" id="edit-time-${it.id}" value="${escapeAttr(it.time || '')}">
-          <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}">
+          <span class="time-sep">~</span>
+          <input type="time" id="edit-time-end-${it.id}" value="${escapeAttr(it.endTime || '')}">
         </div>
+        <input type="text" id="edit-text-${it.id}" value="${escapeAttr(it.text)}">
         <div class="edit-controls">
           <label class="toggle-transport">
             <input type="checkbox" id="edit-transport-${it.id}" ${it.transport ? 'checked' : ''}> 이동/교통
@@ -104,9 +121,10 @@ function renderItem(date, it){
       </div>
     `;
   }
+  const timeLabel = it.endTime ? `${it.time || ''} ~ ${it.endTime}` : (it.time || '');
   return `
     <div class="item ${it.transport ? 'transport' : ''}">
-      <span class="time">${escapeHtml(it.time || '')}</span>
+      <span class="time">${escapeHtml(timeLabel)}</span>
       <span class="text">${escapeHtml(it.text)}</span>
       <div class="actions">
         <button onclick="startEditItem(${it.id})" aria-label="수정">&#9998;</button>
@@ -175,9 +193,29 @@ async function toggleChk(id){
 
 async function delChk(id){
   state.checklist = state.checklist.filter(c => c.id !== id);
+  if(editingChkId === id) editingChkId = null;
   render();
   try{ await api('DELETE', `/api/checklist/${id}`); }
   catch(err){ showToast('삭제 실패, 다시 시도해주세요.'); }
+}
+
+function startEditChk(id){
+  editingChkId = id;
+  render();
+}
+function cancelEditChk(){
+  editingChkId = null;
+  render();
+}
+async function saveEditChk(id){
+  const text = document.getElementById('edit-chk-' + id).value.trim();
+  if(!text) return;
+  const item = state.checklist.find(c => c.id === id);
+  if(item) item.text = text;
+  editingChkId = null;
+  render();
+  try{ await api('PATCH', `/api/checklist/${id}`, {text}); }
+  catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
 }
 
 // ---------- day main event ----------
@@ -192,14 +230,15 @@ async function updateMainEvent(date, val){
 // ---------- itinerary items ----------
 
 async function addItem(date){
-  const timeInput = document.getElementById('time-' + date);
+  const timeStartInput = document.getElementById('time-start-' + date);
+  const timeEndInput = document.getElementById('time-end-' + date);
   const textInput = document.getElementById('text-' + date);
   const transportInput = document.getElementById('transport-' + date);
   const text = textInput.value.trim();
   if(!text) return;
   try{
     const item = await api('POST', '/api/items', {
-      date, time: timeInput.value, text, transport: transportInput.checked
+      date, time: timeStartInput.value, endTime: timeEndInput.value, text, transport: transportInput.checked
     });
     const day = state.days.find(d => d.date === date);
     day.items.push(item);
@@ -218,16 +257,17 @@ function cancelEditItem(){
 
 async function saveEditItem(itemId){
   const time = document.getElementById('edit-time-' + itemId).value;
+  const endTime = document.getElementById('edit-time-end-' + itemId).value;
   const text = document.getElementById('edit-text-' + itemId).value.trim();
   const transport = document.getElementById('edit-transport-' + itemId).checked;
   if(!text) return;
   for(const day of state.days){
     const item = day.items.find(it => it.id === itemId);
-    if(item){ item.time = time; item.text = text; item.transport = transport; break; }
+    if(item){ item.time = time; item.endTime = endTime; item.text = text; item.transport = transport; break; }
   }
   editingItemId = null;
   render();
-  try{ await api('PATCH', `/api/items/${itemId}`, {time, text, transport}); }
+  try{ await api('PATCH', `/api/items/${itemId}`, {time, endTime, text, transport}); }
   catch(err){ showToast('저장 실패, 다시 시도해주세요.'); }
 }
 
