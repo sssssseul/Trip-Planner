@@ -189,9 +189,13 @@ def signup():
             new_user_id = cur.fetchone()['id']
 
             if is_first_user:
-                # 로그인 기능이 생기기 전부터 있던 여행들을 첫 가입자에게 넘겨줘요.
+                # 로그인 기능이 생기기 전부터 있던 여행/설정을 첫 가입자에게 넘겨줘요.
                 cur.execute(
                     'UPDATE trips SET user_id = %s WHERE user_id IS NULL',
+                    (new_user_id,)
+                )
+                cur.execute(
+                    'UPDATE app_settings SET user_id = %s WHERE user_id IS NULL',
                     (new_user_id,)
                 )
         conn.commit()
@@ -310,11 +314,26 @@ def change_password():
 @app.route('/api/settings', methods=['GET'])
 @login_required_api
 def get_settings():
+    user_id = session['user_id']
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT trips_title FROM app_settings ORDER BY id LIMIT 1')
+            cur.execute(
+                'SELECT trips_title FROM app_settings WHERE user_id = %s LIMIT 1',
+                (user_id,)
+            )
             row = cur.fetchone()
+            if not row:
+                # 로그인 기능 붙이기 전부터 있던(주인 없는) 설정이 있으면 넘겨받아요.
+                cur.execute('SELECT id, trips_title FROM app_settings WHERE user_id IS NULL LIMIT 1')
+                orphan = cur.fetchone()
+                if orphan:
+                    cur.execute(
+                        'UPDATE app_settings SET user_id = %s WHERE id = %s',
+                        (user_id, orphan['id'])
+                    )
+                    conn.commit()
+                    row = orphan
         return jsonify({'tripsTitle': row['trips_title'] if row else '내 여행들'})
     except Exception as e:
         app.logger.exception(e)
@@ -326,6 +345,7 @@ def get_settings():
 @app.route('/api/settings', methods=['PUT'])
 @login_required_api
 def update_settings():
+    user_id = session['user_id']
     data = request.get_json(force=True) or {}
     trips_title = (data.get('tripsTitle') or '').strip()
     if not trips_title:
@@ -333,7 +353,7 @@ def update_settings():
     conn = get_conn()
     try:
         with conn.cursor() as cur:
-            cur.execute('SELECT id FROM app_settings ORDER BY id LIMIT 1')
+            cur.execute('SELECT id FROM app_settings WHERE user_id = %s LIMIT 1', (user_id,))
             row = cur.fetchone()
             if row:
                 cur.execute(
@@ -342,7 +362,8 @@ def update_settings():
                 )
             else:
                 cur.execute(
-                    'INSERT INTO app_settings (trips_title) VALUES (%s)', (trips_title,)
+                    'INSERT INTO app_settings (trips_title, user_id) VALUES (%s, %s)',
+                    (trips_title, user_id)
                 )
         conn.commit()
         return jsonify({'ok': True})
