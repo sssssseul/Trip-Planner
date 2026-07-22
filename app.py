@@ -38,7 +38,7 @@ def init_db():
             if not row:
                 cur.execute(
                     'INSERT INTO app_settings (trips_title) VALUES (%s)',
-                    ('내 여행들',)
+                    ('My Trips',)
                 )
                 conn.commit()
     finally:
@@ -334,7 +334,7 @@ def get_settings():
                     )
                     conn.commit()
                     row = orphan
-        return jsonify({'tripsTitle': row['trips_title'] if row else '내 여행들'})
+        return jsonify({'tripsTitle': row['trips_title'] if row else 'My Trips'})
     except Exception as e:
         app.logger.exception(e)
         return jsonify({'error': 'server_error'}), 500
