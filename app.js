@@ -34,6 +34,15 @@ function formatWeekday(dateStr){
 async function loadTrip(){
   state = await api('GET', `/api/trips/${TRIP_ID}`);
   render();
+  updateTabTitle();
+}
+
+function updateTabTitle(){
+  const plainTitle = (state.title || '')
+    .replace(/\p{Extended_Pictographic}/gu, '')
+    .replace(/[\u{FE0F}\u{FE0E}\u{200D}]/gu, '')
+    .trim();
+  document.title = plainTitle ? `Trip Planner_${plainTitle}` : 'Trip Planner';
 }
 
 function render(){
@@ -173,6 +182,7 @@ function escapeAttr(s){
 
 document.getElementById('tripTitle').addEventListener('change', async e => {
   state.title = e.target.value;
+  updateTabTitle();
   try{ await api('PUT', `/api/trips/${TRIP_ID}`, {title: state.title}); }catch(err){ showToast('저장 실패. 다시 시도해주세요.'); }
 });
 
